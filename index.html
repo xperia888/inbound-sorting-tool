@@ -25,25 +25,32 @@
       },
     };
   </script>
+  <style>
+    /* Same subtle scrollbars as Outbound Pallet Staging */
+    ::-webkit-scrollbar { width: 5px; height: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.04); border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.35); border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(100, 116, 139, 0.55); }
+  </style>
 </head>
-<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col selection:bg-amber-400 selection:text-slate-950">
+<body class="bg-slate-100 text-slate-900 font-sans min-h-screen flex flex-col selection:bg-amber-300 selection:text-slate-950">
 
   <!-- Toast / Non-blocking Notification Banner -->
   <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none max-w-sm w-full px-4 sm:px-0"></div>
 
   <!-- Confirmation Modal (Replaces native confirm()) -->
-  <div id="confirm-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
-    <div class="bg-slate-900 border-2 border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl">
-      <div class="flex items-center gap-3 text-amber-400 mb-3">
+  <div id="confirm-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-50 backdrop-blur-sm p-4">
+    <div class="bg-white border-2 border-slate-300 rounded-2xl max-w-md w-full p-6 shadow-md">
+      <div class="flex items-center gap-3 text-amber-600 mb-3">
         <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
-        <h3 id="modal-title" class="text-xl font-bold text-white">Confirm Action</h3>
+        <h3 id="modal-title" class="text-xl font-bold text-slate-900">Confirm Action</h3>
       </div>
-      <p id="modal-message" class="text-slate-300 text-sm mb-6 leading-relaxed">Are you sure you want to proceed?</p>
+      <p id="modal-message" class="text-slate-700 text-sm mb-6 leading-relaxed">Are you sure you want to proceed?</p>
       <div class="flex justify-end gap-3">
-        <button id="modal-cancel" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold transition">
+        <button id="modal-cancel" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold transition">
           Cancel
         </button>
-        <button id="modal-confirm" class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold shadow-lg shadow-rose-950/50 transition">
+        <button id="modal-confirm" class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold shadow-sm transition">
           Confirm Reset
         </button>
       </div>
@@ -51,13 +58,13 @@
   </div>
 
   <!-- Top Navigation & Live Shift Telemetry Bar -->
-  <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-30 shadow-lg">
+  <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-30 shadow-md">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
       
       <!-- Brand / Terminal Title -->
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <div class="w-11 h-11 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center shadow-md shadow-amber-500/20 shrink-0">
+          <div class="w-11 h-11 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center shadow-md shadow-amber-500/20 shrink-0">
             <i class="fa-solid fa-boxes-packing text-xl"></i>
           </div>
           <div>
@@ -140,14 +147,14 @@
     <section class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
 
       <!-- 1. INBOUND SCAN / ENTRY STATION (5 cols on desktop) -->
-      <div class="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl flex flex-col justify-between">
+      <div class="lg:col-span-5 bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-sm flex flex-col justify-between">
         <div>
           <div class="flex items-center justify-between mb-4">
-            <h2 class="text-base font-extrabold uppercase tracking-wider text-slate-200 flex items-center gap-2">
-              <i class="fa-solid fa-qrcode text-amber-400"></i>
+            <h2 class="text-base font-extrabold uppercase tracking-wider text-slate-800 flex items-center gap-2">
+              <i class="fa-solid fa-qrcode text-amber-600"></i>
               Inbound Scan Station
             </h2>
-            <span class="text-xs font-mono text-slate-400 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800">
+            <span class="text-xs font-mono text-slate-500 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200">
               ENTER = SUBMIT
             </span>
           </div>
@@ -156,11 +163,11 @@
           <form id="scan-form" onsubmit="handleScanSubmit(event)" class="space-y-4">
             <!-- Barcode / SKU Input -->
             <div>
-              <label for="sku-input" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+              <label for="sku-input" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
                 Barcode / SKU / Item Name
               </label>
               <div class="relative">
-                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 pointer-events-none">
+                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500 pointer-events-none">
                   <i class="fa-solid fa-barcode text-lg"></i>
                 </span>
                 <input
@@ -168,15 +175,15 @@
                   id="sku-input"
                   autocomplete="off"
                   placeholder="Scan barcode or enter SKU (e.g. SKU-1001)..."
-                  class="w-full pl-11 pr-10 py-3.5 bg-slate-950 border-2 border-slate-700 focus:border-amber-400 focus:ring-4 focus:ring-amber-400/15 rounded-xl text-white font-mono text-base sm:text-lg placeholder:text-slate-600 placeholder:font-sans outline-none transition"
+                  class="w-full pl-11 pr-10 py-3.5 bg-slate-50 border-2 border-slate-300 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/20 rounded-xl text-slate-900 font-mono text-base sm:text-lg placeholder:text-slate-400 placeholder:font-sans outline-none transition"
                 />
                 <button type="button" onclick="clearSkuInput()" title="Clear input"
-                  class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-slate-300">
+                  class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-slate-700">
                   <i class="fa-solid fa-circle-xmark"></i>
                 </button>
               </div>
               <!-- Live SKU Preview Hint -->
-              <div id="sku-live-hint" class="mt-1.5 min-h-[20px] text-xs font-medium text-slate-400 flex items-center gap-1.5">
+              <div id="sku-live-hint" class="mt-1.5 min-h-[20px] text-xs font-medium text-slate-500 flex items-center gap-1.5">
                 <i class="fa-solid fa-circle-info text-slate-500"></i>
                 <span>Ready for barcode scan or select a quick-test SKU below.</span>
               </div>
@@ -185,10 +192,10 @@
             <!-- Quantity Controls -->
             <div>
               <div class="flex items-center justify-between mb-1.5">
-                <label for="qty-input" class="text-xs font-bold uppercase tracking-wider text-slate-400">
+                <label for="qty-input" class="text-xs font-bold uppercase tracking-wider text-slate-500">
                   Quantity Received
                 </label>
-                <button type="button" onclick="setQty(1)" class="text-xs text-amber-400 hover:underline font-semibold">
+                <button type="button" onclick="setQty(1)" class="text-xs text-amber-600 hover:underline font-semibold">
                   Reset to 1
                 </button>
               </div>
@@ -201,21 +208,21 @@
                     min="1"
                     max="9999"
                     value="1"
-                    class="w-full py-3 px-3 bg-slate-950 border-2 border-slate-700 focus:border-amber-400 rounded-xl text-center font-mono text-xl font-extrabold text-white outline-none transition"
+                    class="w-full py-3 px-3 bg-slate-50 border-2 border-slate-300 focus:border-amber-500 rounded-xl text-center font-mono text-xl font-extrabold text-slate-900 outline-none transition"
                   />
                 </div>
                 <!-- Quick Increment Buttons for Touchscreen / Tablet Use -->
                 <div class="col-span-7 sm:col-span-7 grid grid-cols-3 gap-2">
                   <button type="button" onclick="adjustQty(1)"
-                    class="py-3 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-700 font-mono font-extrabold text-base text-slate-100 transition select-none">
+                    class="py-3 rounded-xl bg-slate-100 hover:bg-slate-200 active:scale-95 border border-slate-300 font-mono font-extrabold text-base text-slate-900 transition select-none">
                     +1
                   </button>
                   <button type="button" onclick="adjustQty(5)"
-                    class="py-3 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-700 font-mono font-extrabold text-base text-amber-300 transition select-none">
+                    class="py-3 rounded-xl bg-slate-100 hover:bg-slate-200 active:scale-95 border border-slate-300 font-mono font-extrabold text-base text-amber-700 transition select-none">
                     +5
                   </button>
                   <button type="button" onclick="adjustQty(10)"
-                    class="py-3 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-700 font-mono font-extrabold text-base text-emerald-300 transition select-none">
+                    class="py-3 rounded-xl bg-slate-100 hover:bg-slate-200 active:scale-95 border border-slate-300 font-mono font-extrabold text-base text-emerald-700 transition select-none">
                     +10
                   </button>
                 </div>
@@ -224,7 +231,7 @@
 
             <!-- Primary Submit CTA -->
             <button type="submit"
-              class="w-full py-4 px-6 rounded-xl bg-amber-400 hover:bg-amber-300 active:scale-[0.99] text-slate-950 font-black text-base sm:text-lg tracking-wide uppercase shadow-lg shadow-amber-500/20 flex items-center justify-center gap-3 transition cursor-pointer">
+              class="w-full py-4 px-6 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-[0.99] text-slate-950 font-black text-base sm:text-lg tracking-wide uppercase shadow-sm flex items-center justify-center gap-3 transition cursor-pointer">
               <i class="fa-solid fa-arrow-right-to-bracket text-xl"></i>
               <span>Process &amp; Assign Bin</span>
             </button>
@@ -232,9 +239,9 @@
         </div>
 
         <!-- Quick-Select Preset SKU Buttons -->
-        <div class="mt-6 pt-5 border-t border-slate-800">
+        <div class="mt-6 pt-5 border-t border-slate-200">
           <div class="flex items-center justify-between mb-2.5">
-            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">
               Quick-Scan Test Items
             </span>
             <span class="text-[11px] text-slate-500">1-Tap Fill &amp; Sort</span>
@@ -247,23 +254,23 @@
 
       <!-- 2. ACTIVE PUT-AWAY INDICATOR — HERO VISUAL DISPLAY (7 cols on desktop) -->
       <div id="putaway-card"
-        class="lg:col-span-7 rounded-2xl border-2 border-slate-800 bg-slate-900 p-6 sm:p-8 shadow-2xl flex flex-col justify-between relative overflow-hidden transition-all duration-300">
+        class="lg:col-span-7 rounded-2xl border-2 border-slate-200 bg-white p-6 sm:p-8 shadow-md flex flex-col justify-between relative overflow-hidden transition-all duration-300">
         
         <!-- Subtle Background Grid Pattern -->
         <div class="absolute inset-0 opacity-[0.04] pointer-events-none"
-          style="background-image: radial-gradient(#ffffff 1px, transparent 1px); background-size: 20px 20px;"></div>
+          style="background-image: radial-gradient(#0f172a 1px, transparent 1px); background-size: 20px 20px;"></div>
 
         <!-- Top Status Bar inside Hero Card -->
         <div class="relative z-10 flex flex-wrap items-center justify-between gap-3">
           <div class="flex items-center gap-2">
             <span id="status-badge"
-              class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider bg-slate-800 text-slate-300 border border-slate-700">
+              class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-300">
               <i class="fa-solid fa-hourglass-half"></i>
               AWAITING SCAN
             </span>
           </div>
           <div id="zone-badge"
-            class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-slate-950/80 text-slate-400 border border-slate-800">
+            class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-slate-50 text-slate-500 border border-slate-200">
             <i class="fa-solid fa-layer-group"></i>
             <span>ZONE: STANDBY</span>
           </div>
@@ -271,11 +278,11 @@
 
         <!-- Center Giant Target Bin Display -->
         <div class="relative z-10 my-6 sm:my-8 text-center flex flex-col items-center justify-center">
-          <span class="text-xs sm:text-sm font-extrabold uppercase tracking-[0.22em] text-slate-400 mb-2">
+          <span class="text-xs sm:text-sm font-extrabold uppercase tracking-[0.22em] text-slate-500 mb-2">
             PLACE ITEM INTO TARGET BIN
           </span>
           <div id="hero-bin-number"
-            class="font-mono font-black text-6xl sm:text-7xl md:text-8xl tracking-tight text-slate-600 select-all leading-none transition-all duration-200">
+            class="font-mono font-black text-6xl sm:text-7xl md:text-8xl tracking-tight text-slate-400 select-all leading-none transition-all duration-200">
             ---
           </div>
           <div id="hero-bin-subtext" class="mt-3 text-sm sm:text-base font-semibold text-slate-500">
@@ -284,10 +291,10 @@
         </div>
 
         <!-- Bottom Item & Quantity Readout Strip -->
-        <div class="relative z-10 bg-slate-950/90 border border-slate-800/90 rounded-2xl p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
+        <div class="relative z-10 bg-slate-50 border border-slate-200 rounded-2xl p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
           <div class="sm:col-span-8">
-            <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Active Item</div>
-            <div id="hero-item-name" class="text-lg sm:text-xl font-extrabold text-slate-300 truncate mt-0.5">
+            <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Active Item</div>
+            <div id="hero-item-name" class="text-lg sm:text-xl font-extrabold text-slate-700 truncate mt-0.5">
               No item scanned yet
             </div>
             <div id="hero-item-sku" class="text-xs sm:text-sm font-mono text-slate-500 mt-0.5">
@@ -295,10 +302,10 @@
             </div>
           </div>
 
-          <div class="sm:col-span-4 sm:text-right border-t sm:border-t-0 sm:border-l border-slate-800 pt-3 sm:pt-0 sm:pl-4 flex sm:flex-col items-center sm:items-end justify-between">
-            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Put-Away Qty</span>
+          <div class="sm:col-span-4 sm:text-right border-t sm:border-t-0 sm:border-l border-slate-200 pt-3 sm:pt-0 sm:pl-4 flex sm:flex-col items-center sm:items-end justify-between">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Put-Away Qty</span>
             <div class="flex items-baseline gap-1.5 mt-0.5">
-              <span id="hero-qty" class="font-mono font-black text-3xl sm:text-4xl text-slate-400">0</span>
+              <span id="hero-qty" class="font-mono font-black text-3xl sm:text-4xl text-slate-500">0</span>
               <span class="text-xs font-bold uppercase text-slate-500">UNITS</span>
             </div>
           </div>
@@ -308,37 +315,37 @@
     </section>
 
     <!-- Secondary Section: Tabbed Operational Views -->
-    <section class="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden flex flex-col">
+    <section class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col">
       
       <!-- Tab Navigation Header -->
-      <div class="bg-slate-950/60 border-b border-slate-800 px-4 sm:px-6 pt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div class="bg-slate-50 border-b border-slate-200 px-4 sm:px-6 pt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div class="flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar" role="tablist">
           <button id="tab-btn-log" onclick="switchTab('log')" role="tab"
-            class="tab-btn px-4 py-3 text-sm font-bold border-b-2 border-amber-400 text-amber-400 flex items-center gap-2 whitespace-nowrap transition">
+            class="tab-btn px-4 py-3 text-sm font-bold border-b-2 border-amber-500 text-amber-600 flex items-center gap-2 whitespace-nowrap transition">
             <i class="fa-solid fa-clock-rotate-left"></i>
             <span>Live Sorting Log</span>
-            <span id="badge-log-count" class="px-2 py-0.5 text-xs font-mono rounded-full bg-amber-400/15 text-amber-300">0</span>
+            <span id="badge-log-count" class="px-2 py-0.5 text-xs font-mono rounded-full bg-amber-100 text-amber-700">0</span>
           </button>
 
           <button id="tab-btn-bins" onclick="switchTab('bins')" role="tab"
-            class="tab-btn px-4 py-3 text-sm font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap transition">
+            class="tab-btn px-4 py-3 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-900 flex items-center gap-2 whitespace-nowrap transition">
             <i class="fa-solid fa-table-cells-large"></i>
             <span>Bin Capacity &amp; Summary</span>
-            <span id="badge-bin-count" class="px-2 py-0.5 text-xs font-mono rounded-full bg-slate-800 text-slate-300">0</span>
+            <span id="badge-bin-count" class="px-2 py-0.5 text-xs font-mono rounded-full bg-slate-100 text-slate-700">0</span>
           </button>
 
           <button id="tab-btn-master" onclick="switchTab('master')" role="tab"
-            class="tab-btn px-4 py-3 text-sm font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap transition">
+            class="tab-btn px-4 py-3 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-900 flex items-center gap-2 whitespace-nowrap transition">
             <i class="fa-solid fa-sliders"></i>
             <span>SKU Master / Bin Rules</span>
-            <span id="badge-master-count" class="px-2 py-0.5 text-xs font-mono rounded-full bg-slate-800 text-slate-300">0</span>
+            <span id="badge-master-count" class="px-2 py-0.5 text-xs font-mono rounded-full bg-slate-100 text-slate-700">0</span>
           </button>
         </div>
 
         <!-- Session Reset Utility -->
         <div class="pb-2 sm:pb-0 flex justify-end">
           <button onclick="promptResetSession()"
-            class="px-3 py-1.5 rounded-lg text-xs font-bold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border border-rose-500/20 flex items-center gap-1.5 transition">
+            class="px-3 py-1.5 rounded-lg text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-500/10 border border-rose-500/20 flex items-center gap-1.5 transition">
             <i class="fa-solid fa-rotate-left"></i>
             <span>Reset Session</span>
           </button>
@@ -353,25 +360,21 @@
             <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
             <input type="text" id="log-search" oninput="renderLogs()"
               placeholder="Filter log by SKU, item name, or bin..."
-              class="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 focus:border-amber-400 rounded-xl text-sm text-white placeholder:text-slate-500 outline-none" />
+              class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 focus:border-amber-500 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 outline-none" />
           </div>
           <div class="flex items-center gap-2">
             <select id="log-zone-filter" onchange="renderLogs()"
-              class="px-3.5 py-2.5 bg-slate-950 border border-slate-800 focus:border-amber-400 rounded-xl text-sm text-slate-200 outline-none">
+              class="px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-amber-500 rounded-xl text-sm text-slate-800 outline-none">
               <option value="ALL">All Zones / Categories</option>
-              <option value="Small Electronics">Small Electronics</option>
-              <option value="Peripherals">Peripherals</option>
-              <option value="Heavy/Bulky">Heavy/Bulky</option>
-              <option value="New SKU - Overflow">New SKU - Overflow</option>
             </select>
           </div>
         </div>
 
         <!-- Responsive Log Table -->
-        <div class="overflow-x-auto rounded-xl border border-slate-800">
+        <div class="overflow-x-auto rounded-xl border border-slate-200">
           <table class="w-full text-left border-collapse">
             <thead>
-              <tr class="bg-slate-950/90 border-b border-slate-800 text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
+              <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
                 <th class="py-3.5 px-4">Time</th>
                 <th class="py-3.5 px-4">SKU</th>
                 <th class="py-3.5 px-4">Item Description</th>
@@ -381,7 +384,7 @@
                 <th class="py-3.5 px-4 text-center">Action</th>
               </tr>
             </thead>
-            <tbody id="log-table-body" class="divide-y divide-slate-800/70 text-sm">
+            <tbody id="log-table-body" class="divide-y divide-slate-200 text-sm">
               <!-- Populated by JS -->
             </tbody>
           </table>
@@ -392,15 +395,15 @@
       <div id="tab-panel-bins" class="p-4 sm:p-6 hidden">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-5">
           <div>
-            <h3 class="text-base font-bold text-white">Active Receiving Bins &amp; Put-Away Totals</h3>
-            <p class="text-xs text-slate-400">Real-time unit distribution across fixed warehouse locations and dynamic overflow bins.</p>
+            <h3 class="text-base font-bold text-slate-900">Active Receiving Bins &amp; Put-Away Totals</h3>
+            <p class="text-xs text-slate-500">Real-time unit distribution across fixed warehouse locations and dynamic overflow bins.</p>
           </div>
           <div class="flex items-center gap-3 text-xs font-semibold">
-            <span class="flex items-center gap-1.5 text-emerald-400">
-              <span class="w-2.5 h-2.5 rounded-sm bg-emerald-400"></span> Standard Bin
+            <span class="flex items-center gap-1.5 text-emerald-600">
+              <span class="w-2.5 h-2.5 rounded-sm bg-emerald-500"></span> Standard Bin
             </span>
-            <span class="flex items-center gap-1.5 text-amber-400">
-              <span class="w-2.5 h-2.5 rounded-sm bg-amber-400"></span> Dynamic Overflow
+            <span class="flex items-center gap-1.5 text-amber-600">
+              <span class="w-2.5 h-2.5 rounded-sm bg-amber-500"></span> Dynamic Overflow
             </span>
           </div>
         </div>
@@ -415,38 +418,38 @@
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
           
           <!-- Add / Edit Rule Form -->
-          <div class="lg:col-span-4 bg-slate-950 border border-slate-800 rounded-xl p-5 h-fit">
-            <h3 id="rule-form-title" class="text-sm font-extrabold uppercase tracking-wider text-amber-400 mb-4 flex items-center gap-2">
+          <div class="lg:col-span-4 bg-slate-50 border border-slate-200 rounded-xl p-5 h-fit">
+            <h3 id="rule-form-title" class="text-sm font-extrabold uppercase tracking-wider text-amber-600 mb-4 flex items-center gap-2">
               <i class="fa-solid fa-plus-circle"></i>
               Add / Update SKU Mapping
             </h3>
             <form id="rule-form" onsubmit="handleSaveRule(event)" class="space-y-3.5">
               <div>
-                <label class="block text-xs font-bold text-slate-400 mb-1">SKU Code *</label>
+                <label class="block text-xs font-bold text-slate-500 mb-1">SKU Code *</label>
                 <input type="text" id="rule-sku" required placeholder="e.g. SKU-6200"
-                  class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl font-mono text-sm text-white uppercase outline-none" />
+                  class="w-full px-3.5 py-2.5 bg-white border border-slate-300 focus:border-amber-500 rounded-xl font-mono text-sm text-slate-900 uppercase outline-none" />
               </div>
               <div>
-                <label class="block text-xs font-bold text-slate-400 mb-1">Item Name / Description *</label>
+                <label class="block text-xs font-bold text-slate-500 mb-1">Item Name / Description *</label>
                 <input type="text" id="rule-name" required placeholder="e.g. Noise-Canceling Headset"
-                  class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl text-sm text-white outline-none" />
+                  class="w-full px-3.5 py-2.5 bg-white border border-slate-300 focus:border-amber-500 rounded-xl text-sm text-slate-900 outline-none" />
               </div>
               <div class="grid grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-xs font-bold text-slate-400 mb-1">Target Bin *</label>
+                  <label class="block text-xs font-bold text-slate-500 mb-1">Target Bin *</label>
                   <input type="text" id="rule-bin" required placeholder="e.g. BIN-A08"
-                    class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl font-mono text-sm text-white uppercase outline-none" />
+                    class="w-full px-3.5 py-2.5 bg-white border border-slate-300 focus:border-amber-500 rounded-xl font-mono text-sm text-slate-900 uppercase outline-none" />
                 </div>
                 <div>
-                  <label class="block text-xs font-bold text-slate-400 mb-1">Bin Capacity</label>
+                  <label class="block text-xs font-bold text-slate-500 mb-1">Bin Capacity</label>
                   <input type="number" id="rule-capacity" min="1" max="10000" value="100"
-                    class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl font-mono text-sm text-white outline-none" />
+                    class="w-full px-3.5 py-2.5 bg-white border border-slate-300 focus:border-amber-500 rounded-xl font-mono text-sm text-slate-900 outline-none" />
                 </div>
               </div>
               <div>
-                <label class="block text-xs font-bold text-slate-400 mb-1">Zone / Category</label>
+                <label class="block text-xs font-bold text-slate-500 mb-1">Zone / Category</label>
                 <select id="rule-zone"
-                  class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl text-sm text-white outline-none">
+                  class="w-full px-3.5 py-2.5 bg-white border border-slate-300 focus:border-amber-500 rounded-xl text-sm text-slate-900 outline-none">
                   <option value="Small Electronics">Small Electronics</option>
                   <option value="Peripherals">Peripherals</option>
                   <option value="Heavy/Bulky">Heavy/Bulky</option>
@@ -456,11 +459,11 @@
               </div>
               <div class="pt-2 flex gap-2">
                 <button type="submit"
-                  class="flex-1 py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-sm transition">
+                  class="flex-1 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-sm transition">
                   Save SKU Rule
                 </button>
                 <button type="button" onclick="resetRuleForm()"
-                  class="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-sm transition">
+                  class="px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm transition">
                   Clear
                 </button>
               </div>
@@ -468,10 +471,10 @@
           </div>
 
           <!-- Master Mapping Table -->
-          <div class="lg:col-span-8 overflow-x-auto rounded-xl border border-slate-800">
+          <div class="lg:col-span-8 overflow-x-auto rounded-xl border border-slate-200">
             <table class="w-full text-left border-collapse">
               <thead>
-                <tr class="bg-slate-950 border-b border-slate-800 text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
+                <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
                   <th class="py-3.5 px-4">SKU</th>
                   <th class="py-3.5 px-4">Item Description</th>
                   <th class="py-3.5 px-4">Assigned Bin</th>
@@ -480,7 +483,7 @@
                   <th class="py-3.5 px-4 text-center">Edit</th>
                 </tr>
               </thead>
-              <tbody id="master-table-body" class="divide-y divide-slate-800/70 text-sm">
+              <tbody id="master-table-body" class="divide-y divide-slate-200 text-sm">
                 <!-- Populated by JS -->
               </tbody>
             </table>
@@ -513,6 +516,9 @@
       { sku: 'SKU-7180', name: 'Dual Monitor Articulating Arm', bin: 'ZONE-B05', zone: 'Peripherals', capacity: 40, preset: false }
     ];
 
+    const MAX_QTY = 9999;
+    const BASE_ZONES = ['Small Electronics', 'Peripherals', 'Heavy/Bulky', 'Apparel & Softgoods', 'New SKU - Overflow'];
+
     let skuMaster = [];
     let scanLogs = [];
     let dynamicOverflowMap = {}; // Maps unknown SKU -> { bin: 'OVF-01', name: '...', zone: 'New SKU - Overflow', capacity: 100 }
@@ -527,10 +533,14 @@
         const savedOverflow = localStorage.getItem(STORAGE_KEYS.OVERFLOW_MAP);
         const savedAudio = localStorage.getItem(STORAGE_KEYS.AUDIO);
 
-        skuMaster = savedMaster ? JSON.parse(savedMaster) : JSON.parse(JSON.stringify(DEFAULT_SKU_MASTER));
-        scanLogs = savedLogs ? JSON.parse(savedLogs) : [];
-        dynamicOverflowMap = savedOverflow ? JSON.parse(savedOverflow) : {};
-        audioEnabled = savedAudio !== null ? JSON.parse(savedAudio) : true;
+        const parsedMaster = savedMaster ? JSON.parse(savedMaster) : null;
+        const parsedLogs = savedLogs ? JSON.parse(savedLogs) : null;
+        const parsedOverflow = savedOverflow ? JSON.parse(savedOverflow) : null;
+
+        skuMaster = Array.isArray(parsedMaster) ? parsedMaster : JSON.parse(JSON.stringify(DEFAULT_SKU_MASTER));
+        scanLogs = Array.isArray(parsedLogs) ? parsedLogs : [];
+        dynamicOverflowMap = parsedOverflow && typeof parsedOverflow === 'object' && !Array.isArray(parsedOverflow) ? parsedOverflow : {};
+        audioEnabled = savedAudio !== null ? JSON.parse(savedAudio) !== false : true;
       } catch (err) {
         console.error('Failed to load session from localStorage:', err);
         skuMaster = JSON.parse(JSON.stringify(DEFAULT_SKU_MASTER));
@@ -665,7 +675,8 @@
       // 4. Assign next available dynamic overflow bin (OVF-01, OVF-02, ...)
       const usedOverflowBins = new Set([
         ...Object.values(dynamicOverflowMap).map(o => o.bin),
-        ...skuMaster.map(m => m.bin)
+        ...skuMaster.map(m => m.bin),
+        ...scanLogs.map(l => l.bin)
       ]);
       let counter = 1;
       let assignedOvf = `OVF-${String(counter).padStart(2, '0')}`;
@@ -699,7 +710,7 @@
       const qtyInput = document.getElementById('qty-input');
 
       const rawCode = skuInput.value.trim();
-      const qty = parseInt(qtyInput.value, 10);
+      const qty = Number(qtyInput.value);
 
       if (!rawCode) {
         playScannerTone('error');
@@ -708,9 +719,9 @@
         return;
       }
 
-      if (isNaN(qty) || qty <= 0) {
+      if (!Number.isInteger(qty) || qty < 1 || qty > MAX_QTY) {
         playScannerTone('error');
-        showToast('Quantity must be at least 1 unit.', 'error');
+        showToast(`Quantity must be a whole number from 1 to ${MAX_QTY}.`, 'error');
         qtyInput.focus();
         return;
       }
@@ -775,48 +786,48 @@
 
       if (!entry) {
         // Standby state
-        card.className = 'lg:col-span-7 rounded-2xl border-2 border-slate-800 bg-slate-900 p-6 sm:p-8 shadow-2xl flex flex-col justify-between relative overflow-hidden transition-all duration-300';
-        statusBadge.className = 'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider bg-slate-800 text-slate-300 border border-slate-700';
+        card.className = 'lg:col-span-7 rounded-2xl border-2 border-slate-200 bg-white p-6 sm:p-8 shadow-md flex flex-col justify-between relative overflow-hidden transition-all duration-300';
+        statusBadge.className = 'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-300';
         statusBadge.innerHTML = '<i class="fa-solid fa-hourglass-half"></i> AWAITING SCAN';
-        zoneBadge.className = 'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-slate-950/80 text-slate-400 border border-slate-800';
+        zoneBadge.className = 'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-slate-50 text-slate-500 border border-slate-200';
         zoneBadge.innerHTML = '<i class="fa-solid fa-layer-group"></i> <span>ZONE: STANDBY</span>';
-        binNumberEl.className = 'font-mono font-black text-6xl sm:text-7xl md:text-8xl tracking-tight text-slate-600 select-all leading-none transition-all duration-200';
+        binNumberEl.className = 'font-mono font-black text-6xl sm:text-7xl md:text-8xl tracking-tight text-slate-400 select-all leading-none transition-all duration-200';
         binNumberEl.textContent = '---';
         binSubtextEl.className = 'mt-3 text-sm sm:text-base font-semibold text-slate-500';
         binSubtextEl.textContent = 'Scan an item or click a quick-scan preset to view target bin routing';
-        itemNameEl.className = 'text-lg sm:text-xl font-extrabold text-slate-300 truncate mt-0.5';
+        itemNameEl.className = 'text-lg sm:text-xl font-extrabold text-slate-700 truncate mt-0.5';
         itemNameEl.textContent = 'No item scanned yet';
         itemSkuEl.textContent = 'SKU: —';
-        heroQtyEl.className = 'font-mono font-black text-3xl sm:text-4xl text-slate-400';
+        heroQtyEl.className = 'font-mono font-black text-3xl sm:text-4xl text-slate-500';
         heroQtyEl.textContent = '0';
         return;
       }
 
       // Active High-Contrast Put-Away State (Amber theme for Overflow, Emerald theme for Mapped Bin)
       if (entry.isOverflow) {
-        card.className = 'lg:col-span-7 rounded-2xl border-4 border-amber-400 bg-gradient-to-br from-slate-900 via-slate-900 to-amber-950/50 p-6 sm:p-8 shadow-2xl shadow-amber-500/15 flex flex-col justify-between relative overflow-hidden transition-all duration-200';
-        statusBadge.className = 'inline-flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider bg-amber-400 text-slate-950 shadow-md';
+        card.className = 'lg:col-span-7 rounded-2xl border-4 border-amber-500 bg-gradient-to-br from-white via-white to-amber-50 p-6 sm:p-8 shadow-md shadow-amber-500/15 flex flex-col justify-between relative overflow-hidden transition-all duration-200';
+        statusBadge.className = 'inline-flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider bg-amber-500 text-slate-950 shadow-sm';
         statusBadge.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> OVERFLOW ASSIGNED — PUT TO BIN';
-        zoneBadge.className = 'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold bg-amber-500/20 text-amber-300 border border-amber-400/40';
+        zoneBadge.className = 'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold bg-amber-50 text-amber-700 border border-amber-300';
         zoneBadge.innerHTML = `<i class="fa-solid fa-tag"></i> <span>${escapeHtml(entry.zone)}</span>`;
-        binNumberEl.className = 'font-mono font-black text-6xl sm:text-7xl md:text-8xl tracking-tight text-amber-400 drop-shadow-[0_4px_20px_rgba(251,191,36,0.35)] select-all leading-none scale-105 transition-transform duration-200';
-        binSubtextEl.className = 'mt-3 text-sm sm:text-base font-bold text-amber-200';
+        binNumberEl.className = 'font-mono font-black text-6xl sm:text-7xl md:text-8xl tracking-tight text-amber-600 drop-shadow-[0_4px_20px_rgba(251,191,36,0.35)] select-all leading-none scale-105 transition-transform duration-200';
+        binSubtextEl.className = 'mt-3 text-sm sm:text-base font-bold text-amber-800';
         binSubtextEl.textContent = `New SKU routed to Overflow • Bin Total now ${entry.binTotalAfter} units`;
-        heroQtyEl.className = 'font-mono font-black text-3xl sm:text-4xl text-amber-400';
+        heroQtyEl.className = 'font-mono font-black text-3xl sm:text-4xl text-amber-600';
       } else {
-        card.className = 'lg:col-span-7 rounded-2xl border-4 border-emerald-400 bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950/50 p-6 sm:p-8 shadow-2xl shadow-emerald-500/15 flex flex-col justify-between relative overflow-hidden transition-all duration-200';
-        statusBadge.className = 'inline-flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider bg-emerald-400 text-slate-950 shadow-md';
+        card.className = 'lg:col-span-7 rounded-2xl border-4 border-emerald-500 bg-gradient-to-br from-white via-white to-emerald-50 p-6 sm:p-8 shadow-md shadow-emerald-500/15 flex flex-col justify-between relative overflow-hidden transition-all duration-200';
+        statusBadge.className = 'inline-flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider bg-emerald-600 text-white shadow-sm';
         statusBadge.innerHTML = '<i class="fa-solid fa-circle-check"></i> CONFIRMED — PUT TO BIN';
-        zoneBadge.className = 'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-400/40';
+        zoneBadge.className = 'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-300';
         zoneBadge.innerHTML = `<i class="fa-solid fa-layer-group"></i> <span>${escapeHtml(entry.zone)}</span>`;
-        binNumberEl.className = 'font-mono font-black text-6xl sm:text-7xl md:text-8xl tracking-tight text-emerald-400 drop-shadow-[0_4px_20px_rgba(52,211,153,0.35)] select-all leading-none scale-105 transition-transform duration-200';
-        binSubtextEl.className = 'mt-3 text-sm sm:text-base font-bold text-emerald-200';
+        binNumberEl.className = 'font-mono font-black text-6xl sm:text-7xl md:text-8xl tracking-tight text-emerald-600 drop-shadow-[0_4px_20px_rgba(52,211,153,0.35)] select-all leading-none scale-105 transition-transform duration-200';
+        binSubtextEl.className = 'mt-3 text-sm sm:text-base font-bold text-emerald-800';
         binSubtextEl.textContent = `Standard Location Verified • Bin Total now ${entry.binTotalAfter} units`;
-        heroQtyEl.className = 'font-mono font-black text-3xl sm:text-4xl text-emerald-400';
+        heroQtyEl.className = 'font-mono font-black text-3xl sm:text-4xl text-emerald-600';
       }
 
       binNumberEl.textContent = entry.bin;
-      itemNameEl.className = 'text-lg sm:text-xl font-extrabold text-white truncate mt-0.5';
+      itemNameEl.className = 'text-lg sm:text-xl font-extrabold text-slate-900 truncate mt-0.5';
       itemNameEl.textContent = entry.name;
       itemSkuEl.textContent = `SKU: ${entry.sku}`;
       heroQtyEl.textContent = `+${entry.qty}`;
@@ -833,7 +844,7 @@
     function adjustQty(delta) {
       const qtyInput = document.getElementById('qty-input');
       const current = parseInt(qtyInput.value, 10) || 0;
-      qtyInput.value = Math.max(1, current + delta);
+      qtyInput.value = Math.min(MAX_QTY, Math.max(1, current + delta));
     }
 
     function setQty(val) {
@@ -861,19 +872,19 @@
       );
 
       if (masterMatch) {
-        hintEl.innerHTML = `<i class="fa-solid fa-check-circle text-emerald-400"></i>
-          <span class="text-emerald-300 font-semibold">${escapeHtml(masterMatch.name)}</span>
-          <span class="text-slate-400">→ Target:</span>
-          <span class="font-mono font-bold text-emerald-400">${escapeHtml(masterMatch.bin)}</span>`;
+        hintEl.innerHTML = `<i class="fa-solid fa-check-circle text-emerald-600"></i>
+          <span class="text-emerald-700 font-semibold">${escapeHtml(masterMatch.name)}</span>
+          <span class="text-slate-500">→ Target:</span>
+          <span class="font-mono font-bold text-emerald-600">${escapeHtml(masterMatch.bin)}</span>`;
       } else if (dynamicOverflowMap[trimmed]) {
         const ovf = dynamicOverflowMap[trimmed];
-        hintEl.innerHTML = `<i class="fa-solid fa-clock-rotate-left text-amber-400"></i>
-          <span class="text-amber-300 font-semibold">Active Overflow SKU</span>
-          <span class="text-slate-400">→ Assigned:</span>
-          <span class="font-mono font-bold text-amber-400">${escapeHtml(ovf.bin)}</span>`;
+        hintEl.innerHTML = `<i class="fa-solid fa-clock-rotate-left text-amber-600"></i>
+          <span class="text-amber-700 font-semibold">Active Overflow SKU</span>
+          <span class="text-slate-500">→ Assigned:</span>
+          <span class="font-mono font-bold text-amber-600">${escapeHtml(ovf.bin)}</span>`;
       } else {
-        hintEl.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i>
-          <span class="text-amber-300">Unmapped SKU — will auto-assign next available <strong>OVF</strong> bin.</span>`;
+        hintEl.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles text-amber-600"></i>
+          <span class="text-amber-700">Unmapped SKU — will auto-assign next available <strong>OVF</strong> bin.</span>`;
       }
     }
 
@@ -881,11 +892,25 @@
     // 6. RENDERING VIEWS (STATS, PRESETS, LOGS, BINS, MASTER)
     // =========================================================================
     function refreshAllViews() {
+      renderZoneFilter();
       renderHeaderStats();
       renderPresetButtons();
       renderLogs();
       renderBinGrid();
       renderMasterTable();
+    }
+
+    function renderZoneFilter() {
+      const select = document.getElementById('log-zone-filter');
+      const current = select.value || 'ALL';
+      const zones = Array.from(new Set([
+        ...BASE_ZONES,
+        ...skuMaster.map(m => m.zone),
+        ...scanLogs.map(l => l.zone)
+      ].filter(Boolean)));
+      select.innerHTML = '<option value="ALL">All Zones / Categories</option>' +
+        zones.map(z => `<option value="${escapeHtml(z)}">${escapeHtml(z)}</option>`).join('');
+      select.value = zones.includes(current) ? current : 'ALL';
     }
 
     function renderHeaderStats() {
@@ -906,10 +931,10 @@
       const presets = skuMaster.slice(0, 5); // Show top 5 SKUs for instant testing
 
       container.innerHTML = presets.map(item => `
-        <button type="button" onclick="quickScanPreset('${escapeHtml(item.sku)}')"
-          class="group px-3 py-2 rounded-xl bg-slate-950 hover:bg-slate-800 active:scale-95 border border-slate-800 hover:border-amber-400/50 text-left transition flex items-center gap-2">
-          <span class="font-mono text-xs font-extrabold text-amber-400 group-hover:text-amber-300">${escapeHtml(item.sku)}</span>
-          <span class="text-xs text-slate-300 truncate max-w-[135px]">${escapeHtml(item.name)}</span>
+        <button type="button" data-sku="${escapeHtml(item.sku)}" onclick="quickScanPreset(this.dataset.sku)"
+          class="group px-3 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 active:scale-95 border border-slate-200 hover:border-amber-400 text-left transition flex items-center gap-2">
+          <span class="font-mono text-xs font-extrabold text-amber-600 group-hover:text-amber-700">${escapeHtml(item.sku)}</span>
+          <span class="text-xs text-slate-700 truncate max-w-[135px]">${escapeHtml(item.name)}</span>
         </button>
       `).join('');
     }
@@ -932,8 +957,8 @@
         tbody.innerHTML = `
           <tr>
             <td colspan="7" class="py-12 px-4 text-center text-slate-500">
-              <i class="fa-solid fa-inbox text-3xl mb-2 block text-slate-700"></i>
-              <p class="font-semibold text-slate-400">No inbound sorting records match your view</p>
+              <i class="fa-solid fa-inbox text-3xl mb-2 block text-slate-300"></i>
+              <p class="font-semibold text-slate-500">No inbound sorting records match your view</p>
               <p class="text-xs mt-1">Scan an item above to start logging put-away activity.</p>
             </td>
           </tr>
@@ -944,27 +969,27 @@
       tbody.innerHTML = filtered.map((entry, idx) => {
         const timeStr = new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         const binBadgeClass = entry.isOverflow
-          ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
-          : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30';
+          ? 'bg-amber-50 text-amber-700 border-amber-300'
+          : 'bg-emerald-50 text-emerald-700 border-emerald-300';
 
         return `
-          <tr class="hover:bg-slate-800/40 transition ${idx === 0 && !query && zoneFilter === 'ALL' ? 'bg-slate-800/25' : ''}">
-            <td class="py-3 px-4 font-mono text-xs text-slate-400 whitespace-nowrap">${timeStr}</td>
-            <td class="py-3 px-4 font-mono font-bold text-white whitespace-nowrap">${escapeHtml(entry.sku)}</td>
-            <td class="py-3 px-4 text-slate-200 font-medium">
+          <tr class="hover:bg-slate-50 transition ${idx === 0 && !query && zoneFilter === 'ALL' ? 'bg-amber-50/70' : ''}">
+            <td class="py-3 px-4 font-mono text-xs text-slate-500 whitespace-nowrap">${timeStr}</td>
+            <td class="py-3 px-4 font-mono font-bold text-slate-900 whitespace-nowrap">${escapeHtml(entry.sku)}</td>
+            <td class="py-3 px-4 text-slate-800 font-medium">
               <div>${escapeHtml(entry.name)}</div>
               <div class="text-[11px] text-slate-500">${escapeHtml(entry.zone)}</div>
             </td>
-            <td class="py-3 px-4 text-right font-mono font-extrabold text-emerald-400 whitespace-nowrap">+${entry.qty}</td>
+            <td class="py-3 px-4 text-right font-mono font-extrabold text-emerald-600 whitespace-nowrap">+${entry.qty}</td>
             <td class="py-3 px-4 whitespace-nowrap">
               <span class="inline-flex items-center px-2.5 py-1 rounded-lg font-mono text-xs font-extrabold border ${binBadgeClass}">
                 ${escapeHtml(entry.bin)}
               </span>
             </td>
-            <td class="py-3 px-4 text-right font-mono text-xs font-bold text-slate-300 whitespace-nowrap">${entry.binTotalAfter}</td>
+            <td class="py-3 px-4 text-right font-mono text-xs font-bold text-slate-700 whitespace-nowrap">${entry.binTotalAfter}</td>
             <td class="py-3 px-4 text-center whitespace-nowrap">
-              <button onclick="deleteLogEntry('${entry.id}')" title="Undo / Remove Entry"
-                class="p-2 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition">
+              <button type="button" data-log-id="${escapeHtml(entry.id)}" onclick="deleteLogEntry(this.dataset.logId)" title="Undo / Remove Entry"
+                class="p-2 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-500/10 transition">
                 <i class="fa-solid fa-trash-can"></i>
               </button>
             </td>
@@ -1029,10 +1054,10 @@
       grid.innerHTML = binsArray.map(binObj => {
         const pct = Math.min(100, Math.round((binObj.totalUnits / binObj.capacity) * 100));
         const hasUnits = binObj.totalUnits > 0;
-        const barColor = pct >= 90 ? 'bg-rose-500' : (binObj.isOverflow ? 'bg-amber-400' : 'bg-emerald-400');
+        const barColor = pct >= 90 ? 'bg-rose-500' : (binObj.isOverflow ? 'bg-amber-500' : 'bg-emerald-500');
         const borderClass = hasUnits
-          ? (binObj.isOverflow ? 'border-amber-500/40 bg-slate-950' : 'border-emerald-500/40 bg-slate-950')
-          : 'border-slate-800 bg-slate-950/50 opacity-75';
+          ? (binObj.isOverflow ? 'border-amber-300 bg-slate-50' : 'border-emerald-300 bg-slate-50')
+          : 'border-slate-200 bg-slate-50 opacity-75';
 
         const skuEntries = Object.entries(binObj.skuBreakdown);
 
@@ -1041,19 +1066,19 @@
             <div>
               <div class="flex items-start justify-between gap-2 mb-2">
                 <div>
-                  <span class="font-mono text-xl font-black ${binObj.isOverflow ? 'text-amber-400' : 'text-emerald-400'}">
+                  <span class="font-mono text-xl font-black ${binObj.isOverflow ? 'text-amber-600' : 'text-emerald-600'}">
                     ${escapeHtml(binObj.bin)}
                   </span>
-                  <div class="text-[11px] font-semibold text-slate-400">${escapeHtml(binObj.zone)}</div>
+                  <div class="text-[11px] font-semibold text-slate-500">${escapeHtml(binObj.zone)}</div>
                 </div>
                 <div class="text-right">
-                  <span class="font-mono text-lg font-extrabold text-white">${binObj.totalUnits}</span>
+                  <span class="font-mono text-lg font-extrabold text-slate-900">${binObj.totalUnits}</span>
                   <span class="text-xs text-slate-500 font-mono">/ ${binObj.capacity}</span>
                 </div>
               </div>
 
               <!-- Capacity Progress Bar -->
-              <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden mb-3">
+              <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden mb-3">
                 <div class="h-full ${barColor} transition-all duration-300" style="width: ${pct}%"></div>
               </div>
 
@@ -1061,15 +1086,15 @@
               <div class="space-y-1.5">
                 ${skuEntries.length > 0
                   ? skuEntries.map(([sku, info]) => `
-                      <div class="flex items-center justify-between text-xs bg-slate-900 px-2.5 py-1.5 rounded-lg border border-slate-800/80">
+                      <div class="flex items-center justify-between text-xs bg-white px-2.5 py-1.5 rounded-lg border border-slate-200">
                         <div class="truncate pr-2">
-                          <span class="font-mono font-bold text-slate-200">${escapeHtml(sku)}</span>
+                          <span class="font-mono font-bold text-slate-800">${escapeHtml(sku)}</span>
                           <span class="text-slate-500 ml-1">${escapeHtml(info.name)}</span>
                         </div>
-                        <span class="font-mono font-extrabold text-emerald-400 shrink-0">${info.qty}</span>
+                        <span class="font-mono font-extrabold text-emerald-600 shrink-0">${info.qty}</span>
                       </div>
                     `).join('')
-                  : '<div class="text-xs text-slate-600 italic py-2">Empty — No units placed yet</div>'
+                  : '<div class="text-xs text-slate-400 italic py-2">Empty — No units placed yet</div>'
                 }
               </div>
             </div>
@@ -1081,19 +1106,19 @@
     function renderMasterTable() {
       const tbody = document.getElementById('master-table-body');
       tbody.innerHTML = skuMaster.map(item => `
-        <tr class="hover:bg-slate-800/40 transition">
-          <td class="py-3 px-4 font-mono font-bold text-amber-400 whitespace-nowrap">${escapeHtml(item.sku)}</td>
-          <td class="py-3 px-4 text-slate-200 font-medium">${escapeHtml(item.name)}</td>
+        <tr class="hover:bg-slate-50 transition">
+          <td class="py-3 px-4 font-mono font-bold text-amber-600 whitespace-nowrap">${escapeHtml(item.sku)}</td>
+          <td class="py-3 px-4 text-slate-800 font-medium">${escapeHtml(item.name)}</td>
           <td class="py-3 px-4 whitespace-nowrap">
-            <span class="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-700 font-mono text-xs font-extrabold text-emerald-400">
+            <span class="px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-300 font-mono text-xs font-extrabold text-emerald-600">
               ${escapeHtml(item.bin)}
             </span>
           </td>
-          <td class="py-3 px-4 text-xs text-slate-400 whitespace-nowrap">${escapeHtml(item.zone)}</td>
-          <td class="py-3 px-4 text-right font-mono text-xs text-slate-300">${item.capacity || 100}</td>
+          <td class="py-3 px-4 text-xs text-slate-500 whitespace-nowrap">${escapeHtml(item.zone)}</td>
+          <td class="py-3 px-4 text-right font-mono text-xs text-slate-700">${item.capacity || 100}</td>
           <td class="py-3 px-4 text-center whitespace-nowrap">
-            <button onclick="editMasterRule('${escapeHtml(item.sku)}')"
-              class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 transition">
+            <button type="button" data-sku="${escapeHtml(item.sku)}" onclick="editMasterRule(this.dataset.sku)"
+              class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-800 transition">
               Edit
             </button>
           </td>
@@ -1109,7 +1134,7 @@
       const sku = document.getElementById('rule-sku').value.trim().toUpperCase();
       const name = document.getElementById('rule-name').value.trim();
       const bin = document.getElementById('rule-bin').value.trim().toUpperCase();
-      const capacity = parseInt(document.getElementById('rule-capacity').value, 10) || 100;
+      const capacity = Math.max(1, parseInt(document.getElementById('rule-capacity').value, 10) || 100);
       const zone = document.getElementById('rule-zone').value;
 
       if (!sku || !name || !bin) return;
@@ -1183,10 +1208,10 @@
         const btn = document.getElementById(`tab-btn-${t}`);
         const panel = document.getElementById(`tab-panel-${t}`);
         if (t === tabName) {
-          btn.className = 'tab-btn px-4 py-3 text-sm font-bold border-b-2 border-amber-400 text-amber-400 flex items-center gap-2 whitespace-nowrap transition';
+          btn.className = 'tab-btn px-4 py-3 text-sm font-bold border-b-2 border-amber-500 text-amber-600 flex items-center gap-2 whitespace-nowrap transition';
           panel.classList.remove('hidden');
         } else {
-          btn.className = 'tab-btn px-4 py-3 text-sm font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap transition';
+          btn.className = 'tab-btn px-4 py-3 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-900 flex items-center gap-2 whitespace-nowrap transition';
           panel.classList.add('hidden');
         }
       });
@@ -1217,16 +1242,21 @@
       });
 
       const headers = ['SKU', 'Item Description', 'Total Qty Received', 'Associated Bins', 'Zone / Category'];
+      const csvCell = (value) => {
+        let text = String(value ?? '');
+        if (/^[=+\-@\t\r]/.test(text)) text = "'" + text; // stop Excel/Sheets running it as a formula
+        return `"${text.replace(/"/g, '""')}"`;
+      };
       const rows = Object.values(consolidatedMap).map(item => [
-        `"${item.sku}"`,
-        `"${item.name.replace(/"/g, '""')}"`,
+        csvCell(item.sku),
+        csvCell(item.name),
         item.totalQty,
-        `"${Array.from(item.bins).join(', ')}"`,
-        `"${Array.from(item.zones).join(', ')}"`
+        csvCell(Array.from(item.bins).join(', ')),
+        csvCell(Array.from(item.zones).join(', '))
       ]);
 
-      const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const csvContent = [headers.map(csvCell).join(','), ...rows.map(r => r.join(','))].join('\r\n');
+      const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
 
       const link = document.createElement('a');
@@ -1276,17 +1306,17 @@
       const toast = document.createElement('div');
 
       const styles = {
-        success: 'bg-emerald-950 border-emerald-500 text-emerald-200',
-        error: 'bg-rose-950 border-rose-500 text-rose-200',
-        info: 'bg-slate-900 border-slate-700 text-slate-200'
+        success: 'bg-emerald-50 border-emerald-300 text-emerald-900',
+        error: 'bg-rose-50 border-rose-300 text-rose-900',
+        info: 'bg-white border-slate-300 text-slate-800'
       };
       const icons = {
-        success: 'fa-circle-check text-emerald-400',
-        error: 'fa-circle-exclamation text-rose-400',
-        info: 'fa-circle-info text-amber-400'
+        success: 'fa-circle-check text-emerald-600',
+        error: 'fa-circle-exclamation text-rose-600',
+        info: 'fa-circle-info text-amber-600'
       };
 
-      toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl border shadow-xl text-sm font-semibold transition-all duration-300 ${styles[type] || styles.info}`;
+      toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl border shadow-sm text-sm font-semibold transition-all duration-300 ${styles[type] || styles.info}`;
       toast.innerHTML = `<i class="fa-solid ${icons[type] || icons.info} text-base"></i><span>${escapeHtml(message)}</span>`;
 
       container.appendChild(toast);
