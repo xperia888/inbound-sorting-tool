@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Warehouse Inbound Sorting Terminal</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter & JetBrains Mono for crisp SKU/Bin typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet">
+  <!-- Font Awesome for clean industrial icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+        },
+      },
+    };
+  </script>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col selection:bg-amber-400 selection:text-slate-950">
+
+  <!-- Toast / Non-blocking Notification Banner -->
+  <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none max-w-sm w-full px-4 sm:px-0"></div>
+
+  <!-- Confirmation Modal (Replaces native confirm()) -->
+  <div id="confirm-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+    <div class="bg-slate-900 border-2 border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+      <div class="flex items-center gap-3 text-amber-400 mb-3">
+        <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
+        <h3 id="modal-title" class="text-xl font-bold text-white">Confirm Action</h3>
+      </div>
+      <p id="modal-message" class="text-slate-300 text-sm mb-6 leading-relaxed">Are you sure you want to proceed?</p>
+      <div class="flex justify-end gap-3">
+        <button id="modal-cancel" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold transition">
+          Cancel
+        </button>
+        <button id="modal-confirm" class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold shadow-lg shadow-rose-950/50 transition">
+          Confirm Reset
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Navigation & Live Shift Telemetry Bar -->
+  <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-30 shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      
+      <!-- Brand / Terminal Title -->
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center shadow-md shadow-amber-500/20 shrink-0">
+            <i class="fa-solid fa-boxes-packing text-xl"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="text-lg sm:text-xl font-extrabold tracking-tight text-white">
+                Warehouse Inbound Sorting Terminal
+              </h1>
+              <span class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                STATION 04 ACTIVE
+              </span>
+            </div>
+            <p class="text-xs text-slate-400 font-medium">High-Speed Receiving &amp; Put-Away Routing System</p>
+          </div>
+        </div>
+
+        <!-- Sound Toggle on Mobile -->
+        <button id="sound-toggle-mobile" onclick="toggleAudio()" title="Toggle Scanner Audio Feedback"
+          class="lg:hidden p-2.5 rounded-xl bg-slate-800 border border-slate-700 text-amber-400 hover:bg-slate-700 transition">
+          <i class="fa-solid fa-volume-high"></i>
+        </button>
+      </div>
+
+      <!-- Live Shift Counters & Quick Actions -->
+      <div class="flex flex-wrap items-center justify-between lg:justify-end gap-2 sm:gap-3">
+        <!-- Stat 1: Total Scans -->
+        <div class="bg-slate-950/90 border border-slate-800 rounded-xl px-3.5 py-2 flex items-center gap-3 flex-1 sm:flex-initial">
+          <div class="text-sky-400 bg-sky-500/10 p-2 rounded-lg">
+            <i class="fa-solid fa-barcode"></i>
+          </div>
+          <div>
+            <div class="text-[11px] uppercase tracking-wider text-slate-400 font-bold">Total Scans</div>
+            <div id="stat-scans" class="text-lg sm:text-xl font-mono font-extrabold text-white leading-none mt-0.5">0</div>
+          </div>
+        </div>
+
+        <!-- Stat 2: Total Units Received -->
+        <div class="bg-slate-950/90 border border-slate-800 rounded-xl px-3.5 py-2 flex items-center gap-3 flex-1 sm:flex-initial">
+          <div class="text-emerald-400 bg-emerald-500/10 p-2 rounded-lg">
+            <i class="fa-solid fa-cubes"></i>
+          </div>
+          <div>
+            <div class="text-[11px] uppercase tracking-wider text-slate-400 font-bold">Units Sorted</div>
+            <div id="stat-units" class="text-lg sm:text-xl font-mono font-extrabold text-emerald-400 leading-none mt-0.5">0</div>
+          </div>
+        </div>
+
+        <!-- Stat 3: Active SKUs -->
+        <div class="bg-slate-950/90 border border-slate-800 rounded-xl px-3.5 py-2 flex items-center gap-3 flex-1 sm:flex-initial">
+          <div class="text-amber-400 bg-amber-500/10 p-2 rounded-lg">
+            <i class="fa-solid fa-tags"></i>
+          </div>
+          <div>
+            <div class="text-[11px] uppercase tracking-wider text-slate-400 font-bold">Active SKUs</div>
+            <div id="stat-skus" class="text-lg sm:text-xl font-mono font-extrabold text-amber-400 leading-none mt-0.5">0</div>
+          </div>
+        </div>
+
+        <!-- Audio Toggle Desktop -->
+        <button id="sound-toggle-desktop" onclick="toggleAudio()" title="Toggle Scanner Beep Audio"
+          class="hidden lg:flex items-center justify-center w-11 h-11 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-400 transition">
+          <i class="fa-solid fa-volume-high"></i>
+        </button>
+
+        <!-- Consolidated Report / Export CSV Button -->
+        <button onclick="exportConsolidatedCSV()"
+          class="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-[0.98] border border-slate-700 text-slate-100 font-semibold text-sm transition shadow-sm"
+          title="Export consolidated report (each item listed once with total qty)">
+          <i class="fa-solid fa-file-excel text-emerald-400 text-base"></i>
+          <span>Export Consolidated Report (CSV)</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 flex flex-col gap-6">
+
+    <!-- Top Primary Section: Scan Entry Station (Left) + Hero Put-Away Indicator (Right) -->
+    <section class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+
+      <!-- 1. INBOUND SCAN / ENTRY STATION (5 cols on desktop) -->
+      <div class="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl flex flex-col justify-between">
+        <div>
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-base font-extrabold uppercase tracking-wider text-slate-200 flex items-center gap-2">
+              <i class="fa-solid fa-qrcode text-amber-400"></i>
+              Inbound Scan Station
+            </h2>
+            <span class="text-xs font-mono text-slate-400 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800">
+              ENTER = SUBMIT
+            </span>
+          </div>
+
+          <!-- Form Inputs -->
+          <form id="scan-form" onsubmit="handleScanSubmit(event)" class="space-y-4">
+            <!-- Barcode / SKU Input -->
+            <div>
+              <label for="sku-input" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                Barcode / SKU / Item Name
+              </label>
+              <div class="relative">
+                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 pointer-events-none">
+                  <i class="fa-solid fa-barcode text-lg"></i>
+                </span>
+                <input
+                  type="text"
+                  id="sku-input"
+                  autocomplete="off"
+                  placeholder="Scan barcode or enter SKU (e.g. SKU-1001)..."
+                  class="w-full pl-11 pr-10 py-3.5 bg-slate-950 border-2 border-slate-700 focus:border-amber-400 focus:ring-4 focus:ring-amber-400/15 rounded-xl text-white font-mono text-base sm:text-lg placeholder:text-slate-600 placeholder:font-sans outline-none transition"
+                />
+                <button type="button" onclick="clearSkuInput()" title="Clear input"
+                  class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-slate-300">
+                  <i class="fa-solid fa-circle-xmark"></i>
+                </button>
+              </div>
+              <!-- Live SKU Preview Hint -->
+              <div id="sku-live-hint" class="mt-1.5 min-h-[20px] text-xs font-medium text-slate-400 flex items-center gap-1.5">
+                <i class="fa-solid fa-circle-info text-slate-500"></i>
+                <span>Ready for barcode scan or select a quick-test SKU below.</span>
+              </div>
+            </div>
+
+            <!-- Quantity Controls -->
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <label for="qty-input" class="text-xs font-bold uppercase tracking-wider text-slate-400">
+                  Quantity Received
+                </label>
+                <button type="button" onclick="setQty(1)" class="text-xs text-amber-400 hover:underline font-semibold">
+                  Reset to 1
+                </button>
+              </div>
+              <div class="grid grid-cols-12 gap-2">
+                <!-- Qty Numeric Input -->
+                <div class="col-span-5 sm:col-span-5">
+                  <input
+                    type="number"
+                    id="qty-input"
+                    min="1"
+                    max="9999"
+                    value="1"
+                    class="w-full py-3 px-3 bg-slate-950 border-2 border-slate-700 focus:border-amber-400 rounded-xl text-center font-mono text-xl font-extrabold text-white outline-none transition"
+                  />
+                </div>
+                <!-- Quick Increment Buttons for Touchscreen / Tablet Use -->
+                <div class="col-span-7 sm:col-span-7 grid grid-cols-3 gap-2">
+                  <button type="button" onclick="adjustQty(1)"
+                    class="py-3 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-700 font-mono font-extrabold text-base text-slate-100 transition select-none">
+                    +1
+                  </button>
+                  <button type="button" onclick="adjustQty(5)"
+                    class="py-3 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-700 font-mono font-extrabold text-base text-amber-300 transition select-none">
+                    +5
+                  </button>
+                  <button type="button" onclick="adjustQty(10)"
+                    class="py-3 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-700 font-mono font-extrabold text-base text-emerald-300 transition select-none">
+                    +10
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Primary Submit CTA -->
+            <button type="submit"
+              class="w-full py-4 px-6 rounded-xl bg-amber-400 hover:bg-amber-300 active:scale-[0.99] text-slate-950 font-black text-base sm:text-lg tracking-wide uppercase shadow-lg shadow-amber-500/20 flex items-center justify-center gap-3 transition cursor-pointer">
+              <i class="fa-solid fa-arrow-right-to-bracket text-xl"></i>
+              <span>Process &amp; Assign Bin</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- Quick-Select Preset SKU Buttons -->
+        <div class="mt-6 pt-5 border-t border-slate-800">
+          <div class="flex items-center justify-between mb-2.5">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">
+              Quick-Scan Test Items
+            </span>
+            <span class="text-[11px] text-slate-500">1-Tap Fill &amp; Sort</span>
+          </div>
+          <div id="preset-buttons" class="flex flex-wrap gap-2">
+            <!-- Rendered dynamically from SKU Master presets -->
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. ACTIVE PUT-AWAY INDICATOR — HERO VISUAL DISPLAY (7 cols on desktop) -->
+      <div id="putaway-card"
+        class="lg:col-span-7 rounded-2xl border-2 border-slate-800 bg-slate-900 p-6 sm:p-8 shadow-2xl flex flex-col justify-between relative overflow-hidden transition-all duration-300">
+        
+        <!-- Subtle Background Grid Pattern -->
+        <div class="absolute inset-0 opacity-[0.04] pointer-events-none"
+          style="background-image: radial-gradient(#ffffff 1px, transparent 1px); background-size: 20px 20px;"></div>
+
+        <!-- Top Status Bar inside Hero Card -->
+        <div class="relative z-10 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <span id="status-badge"
+              class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider bg-slate-800 text-slate-300 border border-slate-700">
+              <i class="fa-solid fa-hourglass-half"></i>
+              AWAITING SCAN
+            </span>
+          </div>
+          <div id="zone-badge"
+            class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-slate-950/80 text-slate-400 border border-slate-800">
+            <i class="fa-solid fa-layer-group"></i>
+            <span>ZONE: STANDBY</span>
+          </div>
+        </div>
+
+        <!-- Center Giant Target Bin Display -->
+        <div class="relative z-10 my-6 sm:my-8 text-center flex flex-col items-center justify-center">
+          <span class="text-xs sm:text-sm font-extrabold uppercase tracking-[0.22em] text-slate-400 mb-2">
+            PLACE ITEM INTO TARGET BIN
+          </span>
+          <div id="hero-bin-number"
+            class="font-mono font-black text-6xl sm:text-7xl md:text-8xl tracking-tight text-slate-600 select-all leading-none transition-all duration-200">
+            ---
+          </div>
+          <div id="hero-bin-subtext" class="mt-3 text-sm sm:text-base font-semibold text-slate-500">
+            Scan an item or click a quick-scan preset to view target bin routing
+          </div>
+        </div>
+
+        <!-- Bottom Item & Quantity Readout Strip -->
+        <div class="relative z-10 bg-slate-950/90 border border-slate-800/90 rounded-2xl p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
+          <div class="sm:col-span-8">
+            <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Active Item</div>
+            <div id="hero-item-name" class="text-lg sm:text-xl font-extrabold text-slate-300 truncate mt-0.5">
+              No item scanned yet
+            </div>
+            <div id="hero-item-sku" class="text-xs sm:text-sm font-mono text-slate-500 mt-0.5">
+              SKU: —
+            </div>
+          </div>
+
+          <div class="sm:col-span-4 sm:text-right border-t sm:border-t-0 sm:border-l border-slate-800 pt-3 sm:pt-0 sm:pl-4 flex sm:flex-col items-center sm:items-end justify-between">
+            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Put-Away Qty</span>
+            <div class="flex items-baseline gap-1.5 mt-0.5">
+              <span id="hero-qty" class="font-mono font-black text-3xl sm:text-4xl text-slate-400">0</span>
+              <span class="text-xs font-bold uppercase text-slate-500">UNITS</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Secondary Section: Tabbed Operational Views -->
+    <section class="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden flex flex-col">
+      
+      <!-- Tab Navigation Header -->
+      <div class="bg-slate-950/60 border-b border-slate-800 px-4 sm:px-6 pt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div class="flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar" role="tablist">
+          <button id="tab-btn-log" onclick="switchTab('log')" role="tab"
+            class="tab-btn px-4 py-3 text-sm font-bold border-b-2 border-amber-400 text-amber-400 flex items-center gap-2 whitespace-nowrap transition">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            <span>Live Sorting Log</span>
+            <span id="badge-log-count" class="px-2 py-0.5 text-xs font-mono rounded-full bg-amber-400/15 text-amber-300">0</span>
+          </button>
+
+          <button id="tab-btn-bins" onclick="switchTab('bins')" role="tab"
+            class="tab-btn px-4 py-3 text-sm font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap transition">
+            <i class="fa-solid fa-table-cells-large"></i>
+            <span>Bin Capacity &amp; Summary</span>
+            <span id="badge-bin-count" class="px-2 py-0.5 text-xs font-mono rounded-full bg-slate-800 text-slate-300">0</span>
+          </button>
+
+          <button id="tab-btn-master" onclick="switchTab('master')" role="tab"
+            class="tab-btn px-4 py-3 text-sm font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap transition">
+            <i class="fa-solid fa-sliders"></i>
+            <span>SKU Master / Bin Rules</span>
+            <span id="badge-master-count" class="px-2 py-0.5 text-xs font-mono rounded-full bg-slate-800 text-slate-300">0</span>
+          </button>
+        </div>
+
+        <!-- Session Reset Utility -->
+        <div class="pb-2 sm:pb-0 flex justify-end">
+          <button onclick="promptResetSession()"
+            class="px-3 py-1.5 rounded-lg text-xs font-bold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border border-rose-500/20 flex items-center gap-1.5 transition">
+            <i class="fa-solid fa-rotate-left"></i>
+            <span>Reset Session</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- TAB 1: LIVE SORTING LOG -->
+      <div id="tab-panel-log" class="p-4 sm:p-6">
+        <!-- Search & Filter Controls -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+          <div class="relative flex-1 max-w-md">
+            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+            <input type="text" id="log-search" oninput="renderLogs()"
+              placeholder="Filter log by SKU, item name, or bin..."
+              class="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 focus:border-amber-400 rounded-xl text-sm text-white placeholder:text-slate-500 outline-none" />
+          </div>
+          <div class="flex items-center gap-2">
+            <select id="log-zone-filter" onchange="renderLogs()"
+              class="px-3.5 py-2.5 bg-slate-950 border border-slate-800 focus:border-amber-400 rounded-xl text-sm text-slate-200 outline-none">
+              <option value="ALL">All Zones / Categories</option>
+              <option value="Small Electronics">Small Electronics</option>
+              <option value="Peripherals">Peripherals</option>
+              <option value="Heavy/Bulky">Heavy/Bulky</option>
+              <option value="New SKU - Overflow">New SKU - Overflow</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Responsive Log Table -->
+        <div class="overflow-x-auto rounded-xl border border-slate-800">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-950/90 border-b border-slate-800 text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
+                <th class="py-3.5 px-4">Time</th>
+                <th class="py-3.5 px-4">SKU</th>
+                <th class="py-3.5 px-4">Item Description</th>
+                <th class="py-3.5 px-4 text-right">Qty Added</th>
+                <th class="py-3.5 px-4">Assigned Bin</th>
+                <th class="py-3.5 px-4 text-right">Bin Total</th>
+                <th class="py-3.5 px-4 text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody id="log-table-body" class="divide-y divide-slate-800/70 text-sm">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 2: BIN CAPACITY & SUMMARY VIEW -->
+      <div id="tab-panel-bins" class="p-4 sm:p-6 hidden">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-5">
+          <div>
+            <h3 class="text-base font-bold text-white">Active Receiving Bins &amp; Put-Away Totals</h3>
+            <p class="text-xs text-slate-400">Real-time unit distribution across fixed warehouse locations and dynamic overflow bins.</p>
+          </div>
+          <div class="flex items-center gap-3 text-xs font-semibold">
+            <span class="flex items-center gap-1.5 text-emerald-400">
+              <span class="w-2.5 h-2.5 rounded-sm bg-emerald-400"></span> Standard Bin
+            </span>
+            <span class="flex items-center gap-1.5 text-amber-400">
+              <span class="w-2.5 h-2.5 rounded-sm bg-amber-400"></span> Dynamic Overflow
+            </span>
+          </div>
+        </div>
+
+        <div id="bin-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- TAB 3: SKU MASTER / BIN RULES -->
+      <div id="tab-panel-master" class="p-4 sm:p-6 hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          <!-- Add / Edit Rule Form -->
+          <div class="lg:col-span-4 bg-slate-950 border border-slate-800 rounded-xl p-5 h-fit">
+            <h3 id="rule-form-title" class="text-sm font-extrabold uppercase tracking-wider text-amber-400 mb-4 flex items-center gap-2">
+              <i class="fa-solid fa-plus-circle"></i>
+              Add / Update SKU Mapping
+            </h3>
+            <form id="rule-form" onsubmit="handleSaveRule(event)" class="space-y-3.5">
+              <div>
+                <label class="block text-xs font-bold text-slate-400 mb-1">SKU Code *</label>
+                <input type="text" id="rule-sku" required placeholder="e.g. SKU-6200"
+                  class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl font-mono text-sm text-white uppercase outline-none" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-400 mb-1">Item Name / Description *</label>
+                <input type="text" id="rule-name" required placeholder="e.g. Noise-Canceling Headset"
+                  class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl text-sm text-white outline-none" />
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-bold text-slate-400 mb-1">Target Bin *</label>
+                  <input type="text" id="rule-bin" required placeholder="e.g. BIN-A08"
+                    class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl font-mono text-sm text-white uppercase outline-none" />
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-400 mb-1">Bin Capacity</label>
+                  <input type="number" id="rule-capacity" min="1" max="10000" value="100"
+                    class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl font-mono text-sm text-white outline-none" />
+                </div>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-400 mb-1">Zone / Category</label>
+                <select id="rule-zone"
+                  class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl text-sm text-white outline-none">
+                  <option value="Small Electronics">Small Electronics</option>
+                  <option value="Peripherals">Peripherals</option>
+                  <option value="Heavy/Bulky">Heavy/Bulky</option>
+                  <option value="Apparel & Softgoods">Apparel &amp; Softgoods</option>
+                  <option value="New SKU - Overflow">New SKU - Overflow</option>
+                </select>
+              </div>
+              <div class="pt-2 flex gap-2">
+                <button type="submit"
+                  class="flex-1 py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-sm transition">
+                  Save SKU Rule
+                </button>
+                <button type="button" onclick="resetRuleForm()"
+                  class="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-sm transition">
+                  Clear
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Master Mapping Table -->
+          <div class="lg:col-span-8 overflow-x-auto rounded-xl border border-slate-800">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-950 border-b border-slate-800 text-[11px] font-extrabold uppercase tracking-wider text-slate-400">
+                  <th class="py-3.5 px-4">SKU</th>
+                  <th class="py-3.5 px-4">Item Description</th>
+                  <th class="py-3.5 px-4">Assigned Bin</th>
+                  <th class="py-3.5 px-4">Zone / Category</th>
+                  <th class="py-3.5 px-4 text-right">Max Cap</th>
+                  <th class="py-3.5 px-4 text-center">Edit</th>
+                </tr>
+              </thead>
+              <tbody id="master-table-body" class="divide-y divide-slate-800/70 text-sm">
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <script>
+    // =========================================================================
+    // 1. DEFAULT MASTER DATA & STATE INITIALIZATION
+    // =========================================================================
+    const STORAGE_KEYS = {
+      MASTER: 'wh_sorter_master_v1',
+      LOGS: 'wh_sorter_logs_v1',
+      OVERFLOW_MAP: 'wh_sorter_overflow_v1',
+      AUDIO: 'wh_sorter_audio_v1'
+    };
+
+    const DEFAULT_SKU_MASTER = [
+      { sku: 'SKU-1001', name: 'Wireless Optical Mouse', bin: 'BIN-A04', zone: 'Small Electronics', capacity: 120, preset: true },
+      { sku: 'SKU-2045', name: 'Mechanical RGB Keyboard', bin: 'ZONE-B12', zone: 'Peripherals', capacity: 60, preset: true },
+      { sku: 'SKU-3090', name: '7-in-1 USB-C Multiport Hub', bin: 'BIN-A09', zone: 'Small Electronics', capacity: 150, preset: true },
+      { sku: 'SKU-4120', name: '27" 4K IPS Monitor', bin: 'BULK-C01', zone: 'Heavy/Bulky', capacity: 25, preset: true },
+      { sku: 'SKU-5500', name: 'Ergonomic Mesh Office Chair', bin: 'BULK-C04', zone: 'Heavy/Bulky', capacity: 15, preset: true },
+      { sku: 'SKU-6012', name: '2TB NVMe External SSD', bin: 'BIN-A02', zone: 'Small Electronics', capacity: 200, preset: false },
+      { sku: 'SKU-7180', name: 'Dual Monitor Articulating Arm', bin: 'ZONE-B05', zone: 'Peripherals', capacity: 40, preset: false }
+    ];
+
+    let skuMaster = [];
+    let scanLogs = [];
+    let dynamicOverflowMap = {}; // Maps unknown SKU -> { bin: 'OVF-01', name: '...', zone: 'New SKU - Overflow', capacity: 100 }
+    let audioEnabled = true;
+    let activeTab = 'log';
+
+    // Load persisted state from localStorage safely
+    function loadState() {
+      try {
+        const savedMaster = localStorage.getItem(STORAGE_KEYS.MASTER);
+        const savedLogs = localStorage.getItem(STORAGE_KEYS.LOGS);
+        const savedOverflow = localStorage.getItem(STORAGE_KEYS.OVERFLOW_MAP);
+        const savedAudio = localStorage.getItem(STORAGE_KEYS.AUDIO);
+
+        skuMaster = savedMaster ? JSON.parse(savedMaster) : JSON.parse(JSON.stringify(DEFAULT_SKU_MASTER));
+        scanLogs = savedLogs ? JSON.parse(savedLogs) : [];
+        dynamicOverflowMap = savedOverflow ? JSON.parse(savedOverflow) : {};
+        audioEnabled = savedAudio !== null ? JSON.parse(savedAudio) : true;
+      } catch (err) {
+        console.error('Failed to load session from localStorage:', err);
+        skuMaster = JSON.parse(JSON.stringify(DEFAULT_SKU_MASTER));
+        scanLogs = [];
+        dynamicOverflowMap = {};
+      }
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEYS.MASTER, JSON.stringify(skuMaster));
+        localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(scanLogs));
+        localStorage.setItem(STORAGE_KEYS.OVERFLOW_MAP, JSON.stringify(dynamicOverflowMap));
+        localStorage.setItem(STORAGE_KEYS.AUDIO, JSON.stringify(audioEnabled));
+      } catch (err) {
+        console.error('Failed to save session:', err);
+      }
+    }
+
+    // =========================================================================
+    // 2. WEB AUDIO API SCANNER FEEDBACK (NO EXTERNAL AUDIO URLS)
+    // =========================================================================
+    let audioCtx = null;
+
+    function playScannerTone(type = 'success') {
+      if (!audioEnabled) return;
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        if (type === 'success') {
+          // Crisp dual-tone confirmation chime
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(880, now);
+          osc.frequency.setValueAtTime(1318.5, now + 0.08);
+          gain.gain.setValueAtTime(0.18, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+          osc.start(now);
+          osc.stop(now + 0.23);
+        } else if (type === 'overflow') {
+          // Distinct alert chime for new overflow bin assignment
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(660, now);
+          osc.frequency.setValueAtTime(990, now + 0.1);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+          osc.start(now);
+          osc.stop(now + 0.29);
+        } else {
+          // Low error buzz
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(180, now);
+          gain.gain.setValueAtTime(0.18, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+          osc.start(now);
+          osc.stop(now + 0.26);
+        }
+      } catch (e) {
+        // Ignore audio errors if blocked by browser policy
+      }
+    }
+
+    function toggleAudio() {
+      audioEnabled = !audioEnabled;
+      saveState();
+      updateAudioIcons();
+      showToast(audioEnabled ? 'Scanner audio feedback enabled' : 'Scanner audio muted', 'info');
+    }
+
+    function updateAudioIcons() {
+      const iconHtml = audioEnabled
+        ? '<i class="fa-solid fa-volume-high"></i>'
+        : '<i class="fa-solid fa-volume-xmark text-slate-500"></i>';
+      document.getElementById('sound-toggle-desktop').innerHTML = iconHtml;
+      document.getElementById('sound-toggle-mobile').innerHTML = iconHtml;
+    }
+
+    // =========================================================================
+    // 3. SMART BIN ROUTING & SCAN PROCESSING
+    // =========================================================================
+    function normalizeSku(raw) {
+      return raw.trim().toUpperCase();
+    }
+
+    // Look up SKU by exact SKU code OR partial/exact item name match
+    function resolveItemRouting(rawInput) {
+      const clean = rawInput.trim();
+      const upper = clean.toUpperCase();
+
+      // 1. Exact SKU match in Master
+      let masterMatch = skuMaster.find(item => item.sku.toUpperCase() === upper);
+
+      // 2. Fallback: Match by Item Name if operator typed item name
+      if (!masterMatch) {
+        masterMatch = skuMaster.find(item => item.name.toUpperCase() === upper);
+      }
+
+      if (masterMatch) {
+        return {
+          sku: masterMatch.sku,
+          name: masterMatch.name,
+          bin: masterMatch.bin,
+          zone: masterMatch.zone,
+          capacity: masterMatch.capacity || 100,
+          isOverflow: masterMatch.zone === 'New SKU - Overflow' || masterMatch.bin.startsWith('OVF-')
+        };
+      }
+
+      // 3. Check if already assigned a dynamic overflow bin in this session
+      if (dynamicOverflowMap[upper]) {
+        const existingOvf = dynamicOverflowMap[upper];
+        return {
+          sku: upper,
+          name: existingOvf.name,
+          bin: existingOvf.bin,
+          zone: 'New SKU - Overflow',
+          capacity: 100,
+          isOverflow: true
+        };
+      }
+
+      // 4. Assign next available dynamic overflow bin (OVF-01, OVF-02, ...)
+      const usedOverflowBins = new Set([
+        ...Object.values(dynamicOverflowMap).map(o => o.bin),
+        ...skuMaster.map(m => m.bin)
+      ]);
+      let counter = 1;
+      let assignedOvf = `OVF-${String(counter).padStart(2, '0')}`;
+      while (usedOverflowBins.has(assignedOvf)) {
+        counter++;
+        assignedOvf = `OVF-${String(counter).padStart(2, '0')}`;
+      }
+
+      const newOverflowRecord = {
+        bin: assignedOvf,
+        name: `Unmapped Item (${upper})`,
+        zone: 'New SKU - Overflow',
+        capacity: 100
+      };
+      dynamicOverflowMap[upper] = newOverflowRecord;
+
+      return {
+        sku: upper,
+        name: newOverflowRecord.name,
+        bin: assignedOvf,
+        zone: newOverflowRecord.zone,
+        capacity: 100,
+        isOverflow: true
+      };
+    }
+
+    function handleScanSubmit(event) {
+      if (event) event.preventDefault();
+
+      const skuInput = document.getElementById('sku-input');
+      const qtyInput = document.getElementById('qty-input');
+
+      const rawCode = skuInput.value.trim();
+      const qty = parseInt(qtyInput.value, 10);
+
+      if (!rawCode) {
+        playScannerTone('error');
+        showToast('Please scan a barcode or enter a SKU first.', 'error');
+        skuInput.focus();
+        return;
+      }
+
+      if (isNaN(qty) || qty <= 0) {
+        playScannerTone('error');
+        showToast('Quantity must be at least 1 unit.', 'error');
+        qtyInput.focus();
+        return;
+      }
+
+      const routing = resolveItemRouting(rawCode);
+
+      // Calculate cumulative units in this bin after adding current scan
+      const priorBinUnits = scanLogs
+        .filter(entry => entry.bin === routing.bin)
+        .reduce((sum, entry) => sum + entry.qty, 0);
+      const newBinTotal = priorBinUnits + qty;
+
+      const logEntry = {
+        id: 'LOG-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6).toUpperCase(),
+        timestamp: new Date().toISOString(),
+        sku: routing.sku,
+        name: routing.name,
+        qty: qty,
+        bin: routing.bin,
+        zone: routing.zone,
+        binTotalAfter: newBinTotal,
+        isOverflow: routing.isOverflow
+      };
+
+      scanLogs.unshift(logEntry);
+      saveState();
+
+      // Trigger Hero Put-Away Display & Sound
+      updatePutAwayHero(logEntry);
+      playScannerTone(routing.isOverflow ? 'overflow' : 'success');
+
+      // Reset inputs for rapid next scan
+      skuInput.value = '';
+      qtyInput.value = 1;
+      updateLiveSkuHint('');
+      skuInput.focus();
+
+      // Refresh all dashboards
+      refreshAllViews();
+    }
+
+    // Quick-select preset button handler
+    function quickScanPreset(sku) {
+      const skuInput = document.getElementById('sku-input');
+      skuInput.value = sku;
+      updateLiveSkuHint(sku);
+      handleScanSubmit(null);
+    }
+
+    // =========================================================================
+    // 4. HERO PUT-AWAY DISPLAY UPDATER
+    // =========================================================================
+    function updatePutAwayHero(entry) {
+      const card = document.getElementById('putaway-card');
+      const statusBadge = document.getElementById('status-badge');
+      const zoneBadge = document.getElementById('zone-badge');
+      const binNumberEl = document.getElementById('hero-bin-number');
+      const binSubtextEl = document.getElementById('hero-bin-subtext');
+      const itemNameEl = document.getElementById('hero-item-name');
+      const itemSkuEl = document.getElementById('hero-item-sku');
+      const heroQtyEl = document.getElementById('hero-qty');
+
+      if (!entry) {
+        // Standby state
+        card.className = 'lg:col-span-7 rounded-2xl border-2 border-slate-800 bg-slate-900 p-6 sm:p-8 shadow-2xl flex flex-col justify-between relative overflow-hidden transition-all duration-300';
+        statusBadge.className = 'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider bg-slate-800 text-slate-300 border border-slate-700';
+        statusBadge.innerHTML = '<i class="fa-solid fa-hourglass-half"></i> AWAITING SCAN';
+        zoneBadge.className = 'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-slate-950/80 text-slate-400 border border-slate-800';
+        zoneBadge.innerHTML = '<i class="fa-solid fa-layer-group"></i> <span>ZONE: STANDBY</span>';
+        binNumberEl.className = 'font-mono font-black text-6xl sm:text-7xl md:text-8xl tracking-tight text-slate-600 select-all leading-none transition-all duration-200';
+        binNumberEl.textContent = '---';
+        binSubtextEl.className = 'mt-3 text-sm sm:text-base font-semibold text-slate-500';
+        binSubtextEl.textContent = 'Scan an item or click a quick-scan preset to view target bin routing';
+        itemNameEl.className = 'text-lg sm:text-xl font-extrabold text-slate-300 truncate mt-0.5';
+        itemNameEl.textContent = 'No item scanned yet';
+        itemSkuEl.textContent = 'SKU: —';
+        heroQtyEl.className = 'font-mono font-black text-3xl sm:text-4xl text-slate-400';
+        heroQtyEl.textContent = '0';
+        return;
+      }
+
+      // Active High-Contrast Put-Away State (Amber theme for Overflow, Emerald theme for Mapped Bin)
+      if (entry.isOverflow) {
+        card.className = 'lg:col-span-7 rounded-2xl border-4 border-amber-400 bg-gradient-to-br from-slate-900 via-slate-900 to-amber-950/50 p-6 sm:p-8 shadow-2xl shadow-amber-500/15 flex flex-col justify-between relative overflow-hidden transition-all duration-200';
+        statusBadge.className = 'inline-flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider bg-amber-400 text-slate-950 shadow-md';
+        statusBadge.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> OVERFLOW ASSIGNED — PUT TO BIN';
+        zoneBadge.className = 'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold bg-amber-500/20 text-amber-300 border border-amber-400/40';
+        zoneBadge.innerHTML = `<i class="fa-solid fa-tag"></i> <span>${escapeHtml(entry.zone)}</span>`;
+        binNumberEl.className = 'font-mono font-black text-6xl sm:text-7xl md:text-8xl tracking-tight text-amber-400 drop-shadow-[0_4px_20px_rgba(251,191,36,0.35)] select-all leading-none scale-105 transition-transform duration-200';
+        binSubtextEl.className = 'mt-3 text-sm sm:text-base font-bold text-amber-200';
+        binSubtextEl.textContent = `New SKU routed to Overflow • Bin Total now ${entry.binTotalAfter} units`;
+        heroQtyEl.className = 'font-mono font-black text-3xl sm:text-4xl text-amber-400';
+      } else {
+        card.className = 'lg:col-span-7 rounded-2xl border-4 border-emerald-400 bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950/50 p-6 sm:p-8 shadow-2xl shadow-emerald-500/15 flex flex-col justify-between relative overflow-hidden transition-all duration-200';
+        statusBadge.className = 'inline-flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider bg-emerald-400 text-slate-950 shadow-md';
+        statusBadge.innerHTML = '<i class="fa-solid fa-circle-check"></i> CONFIRMED — PUT TO BIN';
+        zoneBadge.className = 'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-400/40';
+        zoneBadge.innerHTML = `<i class="fa-solid fa-layer-group"></i> <span>${escapeHtml(entry.zone)}</span>`;
+        binNumberEl.className = 'font-mono font-black text-6xl sm:text-7xl md:text-8xl tracking-tight text-emerald-400 drop-shadow-[0_4px_20px_rgba(52,211,153,0.35)] select-all leading-none scale-105 transition-transform duration-200';
+        binSubtextEl.className = 'mt-3 text-sm sm:text-base font-bold text-emerald-200';
+        binSubtextEl.textContent = `Standard Location Verified • Bin Total now ${entry.binTotalAfter} units`;
+        heroQtyEl.className = 'font-mono font-black text-3xl sm:text-4xl text-emerald-400';
+      }
+
+      binNumberEl.textContent = entry.bin;
+      itemNameEl.className = 'text-lg sm:text-xl font-extrabold text-white truncate mt-0.5';
+      itemNameEl.textContent = entry.name;
+      itemSkuEl.textContent = `SKU: ${entry.sku}`;
+      heroQtyEl.textContent = `+${entry.qty}`;
+
+      // Subtle pop animation reset
+      setTimeout(() => {
+        binNumberEl.classList.remove('scale-105');
+      }, 220);
+    }
+
+    // =========================================================================
+    // 5. INPUT HELPERS & LIVE SKU LOOKUP PREVIEW
+    // =========================================================================
+    function adjustQty(delta) {
+      const qtyInput = document.getElementById('qty-input');
+      const current = parseInt(qtyInput.value, 10) || 0;
+      qtyInput.value = Math.max(1, current + delta);
+    }
+
+    function setQty(val) {
+      document.getElementById('qty-input').value = val;
+    }
+
+    function clearSkuInput() {
+      const input = document.getElementById('sku-input');
+      input.value = '';
+      updateLiveSkuHint('');
+      input.focus();
+    }
+
+    function updateLiveSkuHint(val) {
+      const hintEl = document.getElementById('sku-live-hint');
+      const trimmed = val.trim().toUpperCase();
+
+      if (!trimmed) {
+        hintEl.innerHTML = '<i class="fa-solid fa-circle-info text-slate-500"></i><span>Ready for barcode scan or select a quick-test SKU below.</span>';
+        return;
+      }
+
+      const masterMatch = skuMaster.find(
+        m => m.sku.toUpperCase() === trimmed || m.name.toUpperCase() === trimmed
+      );
+
+      if (masterMatch) {
+        hintEl.innerHTML = `<i class="fa-solid fa-check-circle text-emerald-400"></i>
+          <span class="text-emerald-300 font-semibold">${escapeHtml(masterMatch.name)}</span>
+          <span class="text-slate-400">→ Target:</span>
+          <span class="font-mono font-bold text-emerald-400">${escapeHtml(masterMatch.bin)}</span>`;
+      } else if (dynamicOverflowMap[trimmed]) {
+        const ovf = dynamicOverflowMap[trimmed];
+        hintEl.innerHTML = `<i class="fa-solid fa-clock-rotate-left text-amber-400"></i>
+          <span class="text-amber-300 font-semibold">Active Overflow SKU</span>
+          <span class="text-slate-400">→ Assigned:</span>
+          <span class="font-mono font-bold text-amber-400">${escapeHtml(ovf.bin)}</span>`;
+      } else {
+        hintEl.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i>
+          <span class="text-amber-300">Unmapped SKU — will auto-assign next available <strong>OVF</strong> bin.</span>`;
+      }
+    }
+
+    // =========================================================================
+    // 6. RENDERING VIEWS (STATS, PRESETS, LOGS, BINS, MASTER)
+    // =========================================================================
+    function refreshAllViews() {
+      renderHeaderStats();
+      renderPresetButtons();
+      renderLogs();
+      renderBinGrid();
+      renderMasterTable();
+    }
+
+    function renderHeaderStats() {
+      const totalScans = scanLogs.length;
+      const totalUnits = scanLogs.reduce((sum, item) => sum + item.qty, 0);
+      const uniqueSkus = new Set(scanLogs.map(item => item.sku)).size;
+
+      document.getElementById('stat-scans').textContent = totalScans.toLocaleString();
+      document.getElementById('stat-units').textContent = totalUnits.toLocaleString();
+      document.getElementById('stat-skus').textContent = uniqueSkus.toLocaleString();
+
+      document.getElementById('badge-log-count').textContent = totalScans;
+      document.getElementById('badge-master-count').textContent = skuMaster.length;
+    }
+
+    function renderPresetButtons() {
+      const container = document.getElementById('preset-buttons');
+      const presets = skuMaster.slice(0, 5); // Show top 5 SKUs for instant testing
+
+      container.innerHTML = presets.map(item => `
+        <button type="button" onclick="quickScanPreset('${escapeHtml(item.sku)}')"
+          class="group px-3 py-2 rounded-xl bg-slate-950 hover:bg-slate-800 active:scale-95 border border-slate-800 hover:border-amber-400/50 text-left transition flex items-center gap-2">
+          <span class="font-mono text-xs font-extrabold text-amber-400 group-hover:text-amber-300">${escapeHtml(item.sku)}</span>
+          <span class="text-xs text-slate-300 truncate max-w-[135px]">${escapeHtml(item.name)}</span>
+        </button>
+      `).join('');
+    }
+
+    function renderLogs() {
+      const tbody = document.getElementById('log-table-body');
+      const query = document.getElementById('log-search').value.trim().toLowerCase();
+      const zoneFilter = document.getElementById('log-zone-filter').value;
+
+      const filtered = scanLogs.filter(entry => {
+        const matchesQuery = !query ||
+          entry.sku.toLowerCase().includes(query) ||
+          entry.name.toLowerCase().includes(query) ||
+          entry.bin.toLowerCase().includes(query);
+        const matchesZone = zoneFilter === 'ALL' || entry.zone === zoneFilter;
+        return matchesQuery && matchesZone;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="py-12 px-4 text-center text-slate-500">
+              <i class="fa-solid fa-inbox text-3xl mb-2 block text-slate-700"></i>
+              <p class="font-semibold text-slate-400">No inbound sorting records match your view</p>
+              <p class="text-xs mt-1">Scan an item above to start logging put-away activity.</p>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map((entry, idx) => {
+        const timeStr = new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const binBadgeClass = entry.isOverflow
+          ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+          : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30';
+
+        return `
+          <tr class="hover:bg-slate-800/40 transition ${idx === 0 && !query && zoneFilter === 'ALL' ? 'bg-slate-800/25' : ''}">
+            <td class="py-3 px-4 font-mono text-xs text-slate-400 whitespace-nowrap">${timeStr}</td>
+            <td class="py-3 px-4 font-mono font-bold text-white whitespace-nowrap">${escapeHtml(entry.sku)}</td>
+            <td class="py-3 px-4 text-slate-200 font-medium">
+              <div>${escapeHtml(entry.name)}</div>
+              <div class="text-[11px] text-slate-500">${escapeHtml(entry.zone)}</div>
+            </td>
+            <td class="py-3 px-4 text-right font-mono font-extrabold text-emerald-400 whitespace-nowrap">+${entry.qty}</td>
+            <td class="py-3 px-4 whitespace-nowrap">
+              <span class="inline-flex items-center px-2.5 py-1 rounded-lg font-mono text-xs font-extrabold border ${binBadgeClass}">
+                ${escapeHtml(entry.bin)}
+              </span>
+            </td>
+            <td class="py-3 px-4 text-right font-mono text-xs font-bold text-slate-300 whitespace-nowrap">${entry.binTotalAfter}</td>
+            <td class="py-3 px-4 text-center whitespace-nowrap">
+              <button onclick="deleteLogEntry('${entry.id}')" title="Undo / Remove Entry"
+                class="p-2 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderBinGrid() {
+      const grid = document.getElementById('bin-grid');
+
+      // Build unified map of all known bins (from Master + Overflow + Logs)
+      const binMap = {};
+
+      skuMaster.forEach(item => {
+        if (!binMap[item.bin]) {
+          binMap[item.bin] = {
+            bin: item.bin,
+            zone: item.zone,
+            capacity: item.capacity || 100,
+            isOverflow: item.bin.startsWith('OVF-') || item.zone === 'New SKU - Overflow',
+            totalUnits: 0,
+            skuBreakdown: {}
+          };
+        }
+      });
+
+      Object.entries(dynamicOverflowMap).forEach(([sku, ovf]) => {
+        if (!binMap[ovf.bin]) {
+          binMap[ovf.bin] = {
+            bin: ovf.bin,
+            zone: ovf.zone,
+            capacity: ovf.capacity || 100,
+            isOverflow: true,
+            totalUnits: 0,
+            skuBreakdown: {}
+          };
+        }
+      });
+
+      scanLogs.forEach(log => {
+        if (!binMap[log.bin]) {
+          binMap[log.bin] = {
+            bin: log.bin,
+            zone: log.zone,
+            capacity: 100,
+            isOverflow: log.isOverflow,
+            totalUnits: 0,
+            skuBreakdown: {}
+          };
+        }
+        binMap[log.bin].totalUnits += log.qty;
+        if (!binMap[log.bin].skuBreakdown[log.sku]) {
+          binMap[log.bin].skuBreakdown[log.sku] = { name: log.name, qty: 0 };
+        }
+        binMap[log.bin].skuBreakdown[log.sku].qty += log.qty;
+      });
+
+      const binsArray = Object.values(binMap).sort((a, b) => a.bin.localeCompare(b.bin));
+      document.getElementById('badge-bin-count').textContent = binsArray.length;
+
+      grid.innerHTML = binsArray.map(binObj => {
+        const pct = Math.min(100, Math.round((binObj.totalUnits / binObj.capacity) * 100));
+        const hasUnits = binObj.totalUnits > 0;
+        const barColor = pct >= 90 ? 'bg-rose-500' : (binObj.isOverflow ? 'bg-amber-400' : 'bg-emerald-400');
+        const borderClass = hasUnits
+          ? (binObj.isOverflow ? 'border-amber-500/40 bg-slate-950' : 'border-emerald-500/40 bg-slate-950')
+          : 'border-slate-800 bg-slate-950/50 opacity-75';
+
+        const skuEntries = Object.entries(binObj.skuBreakdown);
+
+        return `
+          <div class="rounded-xl border ${borderClass} p-4 flex flex-col justify-between transition">
+            <div>
+              <div class="flex items-start justify-between gap-2 mb-2">
+                <div>
+                  <span class="font-mono text-xl font-black ${binObj.isOverflow ? 'text-amber-400' : 'text-emerald-400'}">
+                    ${escapeHtml(binObj.bin)}
+                  </span>
+                  <div class="text-[11px] font-semibold text-slate-400">${escapeHtml(binObj.zone)}</div>
+                </div>
+                <div class="text-right">
+                  <span class="font-mono text-lg font-extrabold text-white">${binObj.totalUnits}</span>
+                  <span class="text-xs text-slate-500 font-mono">/ ${binObj.capacity}</span>
+                </div>
+              </div>
+
+              <!-- Capacity Progress Bar -->
+              <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden mb-3">
+                <div class="h-full ${barColor} transition-all duration-300" style="width: ${pct}%"></div>
+              </div>
+
+              <!-- SKUs Inside Bin -->
+              <div class="space-y-1.5">
+                ${skuEntries.length > 0
+                  ? skuEntries.map(([sku, info]) => `
+                      <div class="flex items-center justify-between text-xs bg-slate-900 px-2.5 py-1.5 rounded-lg border border-slate-800/80">
+                        <div class="truncate pr-2">
+                          <span class="font-mono font-bold text-slate-200">${escapeHtml(sku)}</span>
+                          <span class="text-slate-500 ml-1">${escapeHtml(info.name)}</span>
+                        </div>
+                        <span class="font-mono font-extrabold text-emerald-400 shrink-0">${info.qty}</span>
+                      </div>
+                    `).join('')
+                  : '<div class="text-xs text-slate-600 italic py-2">Empty — No units placed yet</div>'
+                }
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderMasterTable() {
+      const tbody = document.getElementById('master-table-body');
+      tbody.innerHTML = skuMaster.map(item => `
+        <tr class="hover:bg-slate-800/40 transition">
+          <td class="py-3 px-4 font-mono font-bold text-amber-400 whitespace-nowrap">${escapeHtml(item.sku)}</td>
+          <td class="py-3 px-4 text-slate-200 font-medium">${escapeHtml(item.name)}</td>
+          <td class="py-3 px-4 whitespace-nowrap">
+            <span class="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-700 font-mono text-xs font-extrabold text-emerald-400">
+              ${escapeHtml(item.bin)}
+            </span>
+          </td>
+          <td class="py-3 px-4 text-xs text-slate-400 whitespace-nowrap">${escapeHtml(item.zone)}</td>
+          <td class="py-3 px-4 text-right font-mono text-xs text-slate-300">${item.capacity || 100}</td>
+          <td class="py-3 px-4 text-center whitespace-nowrap">
+            <button onclick="editMasterRule('${escapeHtml(item.sku)}')"
+              class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 transition">
+              Edit
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // =========================================================================
+    // 7. MASTER RULES MANAGEMENT, UNDO LOG, CSV EXPORT & RESET
+    // =========================================================================
+    function handleSaveRule(event) {
+      event.preventDefault();
+      const sku = document.getElementById('rule-sku').value.trim().toUpperCase();
+      const name = document.getElementById('rule-name').value.trim();
+      const bin = document.getElementById('rule-bin').value.trim().toUpperCase();
+      const capacity = parseInt(document.getElementById('rule-capacity').value, 10) || 100;
+      const zone = document.getElementById('rule-zone').value;
+
+      if (!sku || !name || !bin) return;
+
+      const existingIdx = skuMaster.findIndex(m => m.sku.toUpperCase() === sku);
+      const record = { sku, name, bin, zone, capacity, preset: existingIdx >= 0 ? skuMaster[existingIdx].preset : false };
+
+      if (existingIdx >= 0) {
+        skuMaster[existingIdx] = record;
+        showToast(`Updated routing rule for ${sku} → ${bin}`, 'success');
+      } else {
+        skuMaster.unshift(record);
+        // Remove from temporary overflow map if it was previously unmapped
+        if (dynamicOverflowMap[sku]) {
+          delete dynamicOverflowMap[sku];
+        }
+        showToast(`Added permanent rule: ${sku} → ${bin}`, 'success');
+      }
+
+      saveState();
+      resetRuleForm();
+      refreshAllViews();
+    }
+
+    function editMasterRule(sku) {
+      const item = skuMaster.find(m => m.sku === sku);
+      if (!item) return;
+      document.getElementById('rule-sku').value = item.sku;
+      document.getElementById('rule-name').value = item.name;
+      document.getElementById('rule-bin').value = item.bin;
+      document.getElementById('rule-capacity').value = item.capacity || 100;
+      document.getElementById('rule-zone').value = item.zone;
+      document.getElementById('rule-sku').focus();
+    }
+
+    function resetRuleForm() {
+      document.getElementById('rule-form').reset();
+      document.getElementById('rule-capacity').value = 100;
+    }
+
+    function deleteLogEntry(logId) {
+      const idx = scanLogs.findIndex(l => l.id === logId);
+      if (idx === -1) return;
+
+      const removed = scanLogs[idx];
+      scanLogs.splice(idx, 1);
+
+      // Recalculate running binTotalAfter values chronologically
+      const chronological = [...scanLogs].reverse();
+      const runningTotals = {};
+      chronological.forEach(entry => {
+        runningTotals[entry.bin] = (runningTotals[entry.bin] || 0) + entry.qty;
+        entry.binTotalAfter = runningTotals[entry.bin];
+      });
+
+      saveState();
+      refreshAllViews();
+
+      if (scanLogs.length > 0) {
+        updatePutAwayHero(scanLogs[0]);
+      } else {
+        updatePutAwayHero(null);
+      }
+
+      showToast(`Removed ${removed.qty}x ${removed.sku} from ${removed.bin}`, 'info');
+    }
+
+    function switchTab(tabName) {
+      activeTab = tabName;
+      ['log', 'bins', 'master'].forEach(t => {
+        const btn = document.getElementById(`tab-btn-${t}`);
+        const panel = document.getElementById(`tab-panel-${t}`);
+        if (t === tabName) {
+          btn.className = 'tab-btn px-4 py-3 text-sm font-bold border-b-2 border-amber-400 text-amber-400 flex items-center gap-2 whitespace-nowrap transition';
+          panel.classList.remove('hidden');
+        } else {
+          btn.className = 'tab-btn px-4 py-3 text-sm font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap transition';
+          panel.classList.add('hidden');
+        }
+      });
+    }
+
+    function exportConsolidatedCSV() {
+      if (scanLogs.length === 0) {
+        showToast('No sorting records available to export yet.', 'error');
+        return;
+      }
+
+      // Consolidate logs by SKU: sum quantities and collect unique bins & zones
+      const consolidatedMap = {};
+      scanLogs.forEach(l => {
+        const key = l.sku.toUpperCase();
+        if (!consolidatedMap[key]) {
+          consolidatedMap[key] = {
+            sku: l.sku,
+            name: l.name,
+            totalQty: 0,
+            bins: new Set(),
+            zones: new Set()
+          };
+        }
+        consolidatedMap[key].totalQty += l.qty;
+        consolidatedMap[key].bins.add(l.bin);
+        consolidatedMap[key].zones.add(l.zone);
+      });
+
+      const headers = ['SKU', 'Item Description', 'Total Qty Received', 'Associated Bins', 'Zone / Category'];
+      const rows = Object.values(consolidatedMap).map(item => [
+        `"${item.sku}"`,
+        `"${item.name.replace(/"/g, '""')}"`,
+        item.totalQty,
+        `"${Array.from(item.bins).join(', ')}"`,
+        `"${Array.from(item.zones).join(', ')}"`
+      ]);
+
+      const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+
+      const link = document.createElement('a');
+      const dateStamp = new Date().toISOString().slice(0, 10);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `consolidated-inbound-report-${dateStamp}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      showToast(`Exported consolidated report (${Object.keys(consolidatedMap).length} unique items)`, 'success');
+    }
+
+    // Custom non-blocking confirmation modal for Reset Session
+    function promptResetSession() {
+      const modal = document.getElementById('confirm-modal');
+      document.getElementById('modal-title').textContent = 'Reset Inbound Sorting Session?';
+      document.getElementById('modal-message').textContent =
+        'This will clear all scanned logs and reset bin unit counts to zero for the new shift. Your permanent SKU-to-Bin Master rules will be preserved.';
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+
+      document.getElementById('modal-cancel').onclick = () => {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      };
+
+      document.getElementById('modal-confirm').onclick = () => {
+        scanLogs = [];
+        dynamicOverflowMap = {};
+        saveState();
+        updatePutAwayHero(null);
+        refreshAllViews();
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        showToast('Shift session reset. Ready for new inbound manifest.', 'info');
+        document.getElementById('sku-input').focus();
+      };
+    }
+
+    // =========================================================================
+    // 8. UTILITIES (TOASTS & XSS ESCAPING)
+    // =========================================================================
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+
+      const styles = {
+        success: 'bg-emerald-950 border-emerald-500 text-emerald-200',
+        error: 'bg-rose-950 border-rose-500 text-rose-200',
+        info: 'bg-slate-900 border-slate-700 text-slate-200'
+      };
+      const icons = {
+        success: 'fa-circle-check text-emerald-400',
+        error: 'fa-circle-exclamation text-rose-400',
+        info: 'fa-circle-info text-amber-400'
+      };
+
+      toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl border shadow-xl text-sm font-semibold transition-all duration-300 ${styles[type] || styles.info}`;
+      toast.innerHTML = `<i class="fa-solid ${icons[type] || icons.info} text-base"></i><span>${escapeHtml(message)}</span>`;
+
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // =========================================================================
+    // 9. BOOTSTRAP APPLICATION
+    // =========================================================================
+    window.addEventListener('DOMContentLoaded', () => {
+      loadState();
+      updateAudioIcons();
+      refreshAllViews();
+
+      // Restore last active put-away card if logs exist from current session
+      if (scanLogs.length > 0) {
+        updatePutAwayHero(scanLogs[0]);
+      }
+
+      const skuInput = document.getElementById('sku-input');
+      skuInput.addEventListener('input', (e) => updateLiveSkuHint(e.target.value));
+      skuInput.focus();
+    });
+  </script>
+</body>
+</html>
