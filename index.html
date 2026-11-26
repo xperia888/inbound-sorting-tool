@@ -77,7 +77,7 @@
                 STATION 04 ACTIVE
               </span>
             </div>
-            <p class="text-xs text-slate-400 font-medium">High-Speed Receiving &amp; Put-Away Routing System</p>
+            <p id="header-subtitle" class="text-xs text-slate-400 font-medium">High-Speed Receiving &amp; Put-Away Routing System</p>
           </div>
         </div>
 
@@ -96,7 +96,7 @@
             <i class="fa-solid fa-barcode"></i>
           </div>
           <div>
-            <div class="text-[11px] uppercase tracking-wider text-slate-400 font-bold">Total Scans</div>
+            <div id="stat-label-scans" class="text-[11px] uppercase tracking-wider text-slate-400 font-bold">Total Scans</div>
             <div id="stat-scans" class="text-lg sm:text-xl font-mono font-extrabold text-white leading-none mt-0.5">0</div>
           </div>
         </div>
@@ -107,7 +107,7 @@
             <i class="fa-solid fa-cubes"></i>
           </div>
           <div>
-            <div class="text-[11px] uppercase tracking-wider text-slate-400 font-bold">Units Sorted</div>
+            <div id="stat-label-units" class="text-[11px] uppercase tracking-wider text-slate-400 font-bold">Units Sorted</div>
             <div id="stat-units" class="text-lg sm:text-xl font-mono font-extrabold text-emerald-400 leading-none mt-0.5">0</div>
           </div>
         </div>
@@ -118,7 +118,7 @@
             <i class="fa-solid fa-tags"></i>
           </div>
           <div>
-            <div class="text-[11px] uppercase tracking-wider text-slate-400 font-bold">Active SKUs</div>
+            <div id="stat-label-skus" class="text-[11px] uppercase tracking-wider text-slate-400 font-bold">Active SKUs</div>
             <div id="stat-skus" class="text-lg sm:text-xl font-mono font-extrabold text-amber-400 leading-none mt-0.5">0</div>
           </div>
         </div>
@@ -130,11 +130,11 @@
         </button>
 
         <!-- Consolidated Report / Export CSV Button -->
-        <button onclick="exportConsolidatedCSV()"
+        <button id="header-export-btn" onclick="exportForActiveMode()"
           class="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-[0.98] border border-slate-700 text-slate-100 font-semibold text-sm transition shadow-sm"
           title="Export consolidated report (each item listed once with total qty)">
           <i class="fa-solid fa-file-excel text-emerald-400 text-base"></i>
-          <span>Export Consolidated Report (CSV)</span>
+          <span id="header-export-label">Export Consolidated Report (CSV)</span>
         </button>
       </div>
     </div>
@@ -142,6 +142,26 @@
 
   <!-- Main Workspace -->
   <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 flex flex-col gap-6">
+
+    <!-- Mode Switch: Inbound Put-Away vs Returns Sorting -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div class="inline-flex p-1 rounded-xl bg-white border border-slate-200 shadow-sm self-start" role="tablist" aria-label="Sorting mode">
+        <button id="mode-btn-inbound" type="button" onclick="switchMode('inbound')" role="tab"
+          class="px-4 py-2 rounded-lg text-sm font-extrabold flex items-center gap-2 transition">
+          <i class="fa-solid fa-arrow-right-to-bracket"></i>
+          <span>Inbound Put-Away</span>
+        </button>
+        <button id="mode-btn-returns" type="button" onclick="switchMode('returns')" role="tab"
+          class="px-4 py-2 rounded-lg text-sm font-extrabold flex items-center gap-2 transition">
+          <i class="fa-solid fa-rotate-left"></i>
+          <span>Returns Sorting</span>
+          <span id="badge-returns-open" class="px-2 py-0.5 text-xs font-mono rounded-full bg-slate-100 text-slate-700">0</span>
+        </button>
+      </div>
+      <p id="mode-hint" class="text-xs text-slate-500 font-medium"></p>
+    </div>
+
+    <div id="mode-inbound" class="flex flex-col gap-6">
 
     <!-- Top Primary Section: Scan Entry Station (Left) + Hero Put-Away Indicator (Right) -->
     <section class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
@@ -493,6 +513,213 @@
       </div>
 
     </section>
+    </div>
+    <!-- /mode-inbound -->
+
+    <!-- ===================================================================== -->
+    <!-- RETURNS SORTING MODE                                                   -->
+    <!-- ===================================================================== -->
+    <div id="mode-returns" class="hidden flex-col gap-6">
+
+      <section class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+
+        <!-- 1. RETURNS SCAN STATION -->
+        <div class="lg:col-span-5 bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-base font-extrabold uppercase tracking-wider text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-rotate-left text-amber-600"></i>
+                Returns Scan Station
+              </h2>
+              <span class="text-xs font-mono text-slate-500 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200">
+                ENTER = SUBMIT
+              </span>
+            </div>
+
+            <form id="return-form" onsubmit="handleReturnSubmit(event)" class="space-y-4">
+              <!-- Primary reference -->
+              <div>
+                <label for="return-ref-input" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                  Tracking No. / Order No. / RMA / Any Reference
+                </label>
+                <div class="relative">
+                  <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500 pointer-events-none">
+                    <i class="fa-solid fa-barcode text-lg"></i>
+                  </span>
+                  <input type="text" id="return-ref-input" autocomplete="off"
+                    placeholder="Scan parcel label or type any reference..."
+                    class="w-full pl-11 pr-10 py-3.5 bg-slate-50 border-2 border-slate-300 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/20 rounded-xl text-slate-900 font-mono text-base sm:text-lg placeholder:text-slate-400 placeholder:font-sans outline-none transition" />
+                  <button type="button" onclick="clearReturnInputs()" title="Clear input"
+                    class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-slate-700">
+                    <i class="fa-solid fa-circle-xmark"></i>
+                  </button>
+                </div>
+                <div id="return-live-hint" class="mt-1.5 min-h-[20px] text-xs font-medium text-slate-500 flex items-center gap-1.5">
+                  <i class="fa-solid fa-circle-info text-slate-500"></i>
+                  <span>Scan a returned parcel. A known reference opens its existing record.</span>
+                </div>
+              </div>
+
+              <!-- Linked references -->
+              <div>
+                <label for="return-linked-input" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                  Linked References <span class="normal-case font-medium text-slate-400">(optional, comma separated)</span>
+                </label>
+                <input type="text" id="return-linked-input" autocomplete="off"
+                  placeholder="e.g. ORD-100234, RMA-5521"
+                  class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 focus:border-amber-500 rounded-xl font-mono text-sm text-slate-900 placeholder:text-slate-400 placeholder:font-sans outline-none transition" />
+              </div>
+
+              <!-- Condition / disposition -->
+              <div>
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Condition / Disposition</span>
+                  <span class="text-[11px] text-slate-500">Stays selected between scans</span>
+                </div>
+                <div id="condition-buttons" class="grid grid-cols-2 gap-2">
+                  <!-- Rendered by JS -->
+                </div>
+              </div>
+
+              <!-- Notes -->
+              <div>
+                <label for="return-notes-input" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                  Notes <span class="normal-case font-medium text-slate-400">(optional)</span>
+                </label>
+                <input type="text" id="return-notes-input" autocomplete="off" maxlength="300"
+                  placeholder="e.g. box crushed, 1 of 2 items missing"
+                  class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 focus:border-amber-500 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 outline-none transition" />
+              </div>
+
+              <button type="submit"
+                class="w-full py-4 px-6 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-[0.99] text-slate-950 font-black text-base sm:text-lg tracking-wide uppercase shadow-sm flex items-center justify-center gap-3 transition cursor-pointer">
+                <i class="fa-solid fa-box-open text-xl"></i>
+                <span>Log Return &amp; Assign Bin</span>
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- 2. RETURN HERO DISPLAY -->
+        <div id="return-card"
+          class="lg:col-span-7 rounded-2xl border-2 border-slate-200 bg-white p-6 sm:p-8 shadow-md flex flex-col justify-between relative overflow-hidden transition-all duration-300">
+          <div class="absolute inset-0 opacity-[0.04] pointer-events-none"
+            style="background-image: radial-gradient(#0f172a 1px, transparent 1px); background-size: 20px 20px;"></div>
+
+          <div class="relative z-10 flex flex-wrap items-center justify-between gap-3">
+            <span id="return-status-badge"
+              class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-300">
+              <i class="fa-solid fa-hourglass-half"></i> AWAITING SCAN
+            </span>
+            <span id="return-type-badge"
+              class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-slate-50 text-slate-500 border border-slate-200">
+              <i class="fa-solid fa-truck"></i> <span>CARRIER: —</span>
+            </span>
+          </div>
+
+          <div class="relative z-10 my-6 sm:my-8 text-center flex flex-col items-center justify-center">
+            <span class="text-xs sm:text-sm font-extrabold uppercase tracking-[0.22em] text-slate-500 mb-2">
+              PLACE PARCEL INTO RETURN BIN
+            </span>
+            <div id="return-hero-bin"
+              class="font-mono font-black text-6xl sm:text-7xl md:text-8xl tracking-tight text-slate-400 select-all leading-none transition-all duration-200">
+              ---
+            </div>
+            <div id="return-hero-subtext" class="mt-3 text-sm sm:text-base font-semibold text-slate-500">
+              Pick a condition, then scan the parcel's tracking number or any related reference
+            </div>
+          </div>
+
+          <div class="relative z-10 bg-slate-50 border border-slate-200 rounded-2xl p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
+            <div class="sm:col-span-8 min-w-0">
+              <div class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Reference</div>
+              <div id="return-hero-ref" class="text-lg sm:text-xl font-mono font-extrabold text-slate-700 truncate mt-0.5">No parcel scanned yet</div>
+              <div id="return-hero-linked" class="text-xs sm:text-sm font-mono text-slate-500 mt-0.5 truncate">Linked: —</div>
+            </div>
+            <div class="sm:col-span-4 sm:text-right border-t sm:border-t-0 sm:border-l border-slate-200 pt-3 sm:pt-0 sm:pl-4 flex sm:flex-col items-center sm:items-end justify-between">
+              <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Received</span>
+              <span id="return-hero-time" class="font-mono font-black text-xl sm:text-2xl text-slate-500 mt-0.5">--:--</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- RETURNS REGISTER -->
+      <section class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col">
+        <div class="bg-slate-50 border-b border-slate-200 px-4 sm:px-6 py-3 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+          <div class="flex items-center gap-2 text-sm font-bold text-amber-600">
+            <i class="fa-solid fa-clipboard-list"></i>
+            <span>Returns Register</span>
+            <span id="badge-returns-count" class="px-2 py-0.5 text-xs font-mono rounded-full bg-amber-100 text-amber-700">0</span>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <label class="flex items-center gap-2 text-xs font-semibold text-slate-600 select-none cursor-pointer">
+              <input type="checkbox" id="archive-after-export" checked class="w-4 h-4 accent-amber-500" />
+              Mark as archived after export
+            </label>
+            <button type="button" onclick="exportReturnsCSV()"
+              class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 active:scale-[0.98] text-slate-100 font-semibold text-sm transition shadow-sm">
+              <i class="fa-solid fa-file-excel text-emerald-400"></i>
+              <span id="returns-export-label">Export Shown (CSV)</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="p-4 sm:p-6">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
+            <div class="relative flex-1 max-w-md">
+              <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+              <input type="text" id="returns-search" oninput="renderReturns()"
+                placeholder="Find by tracking, order, RMA, bin or notes..."
+                class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 focus:border-amber-500 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 outline-none" />
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <select id="returns-status-filter" onchange="renderReturns()"
+                class="px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-amber-500 rounded-xl text-sm text-slate-800 outline-none">
+                <option value="OPEN">Open (not archived)</option>
+                <option value="ARCHIVED">Archived</option>
+                <option value="ALL">All statuses</option>
+              </select>
+              <select id="returns-condition-filter" onchange="renderReturns()"
+                class="px-3.5 py-2.5 bg-slate-50 border border-slate-200 focus:border-amber-500 rounded-xl text-sm text-slate-800 outline-none">
+                <option value="ALL">All conditions</option>
+              </select>
+              <input type="date" id="returns-date-from" onchange="renderReturns()" title="Received from"
+                class="px-3 py-2 bg-slate-50 border border-slate-200 focus:border-amber-500 rounded-xl text-sm text-slate-800 outline-none" />
+              <span class="text-xs text-slate-400">to</span>
+              <input type="date" id="returns-date-to" onchange="renderReturns()" title="Received to"
+                class="px-3 py-2 bg-slate-50 border border-slate-200 focus:border-amber-500 rounded-xl text-sm text-slate-800 outline-none" />
+            </div>
+          </div>
+
+          <div class="overflow-x-auto rounded-xl border border-slate-200">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
+                  <th class="py-3.5 px-4 w-10">
+                    <input type="checkbox" id="returns-select-all" onchange="toggleSelectAllReturns(this.checked)" title="Select all shown" class="w-4 h-4 accent-amber-500" />
+                  </th>
+                  <th class="py-3.5 px-4">Received</th>
+                  <th class="py-3.5 px-4">Reference</th>
+                  <th class="py-3.5 px-4">Linked Refs</th>
+                  <th class="py-3.5 px-4">Condition</th>
+                  <th class="py-3.5 px-4">Return Bin</th>
+                  <th class="py-3.5 px-4">Status</th>
+                  <th class="py-3.5 px-4 text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody id="returns-table-body" class="divide-y divide-slate-200 text-sm">
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
+          </div>
+          <p class="mt-3 text-xs text-slate-500">
+            Tick rows to export only those. With nothing ticked, the export covers every row shown by the current filters.
+          </p>
+        </div>
+      </section>
+    </div>
+    <!-- /mode-returns -->
   </main>
 
   <script>
@@ -503,7 +730,10 @@
       MASTER: 'wh_sorter_master_v1',
       LOGS: 'wh_sorter_logs_v1',
       OVERFLOW_MAP: 'wh_sorter_overflow_v1',
-      AUDIO: 'wh_sorter_audio_v1'
+      AUDIO: 'wh_sorter_audio_v1',
+      RETURNS: 'wh_sorter_returns_v1',
+      RETURN_CONDITION: 'wh_sorter_return_condition_v1',
+      MODE: 'wh_sorter_mode_v1'
     };
 
     const DEFAULT_SKU_MASTER = [
@@ -918,9 +1148,23 @@
       const totalUnits = scanLogs.reduce((sum, item) => sum + item.qty, 0);
       const uniqueSkus = new Set(scanLogs.map(item => item.sku)).size;
 
-      document.getElementById('stat-scans').textContent = totalScans.toLocaleString();
-      document.getElementById('stat-units').textContent = totalUnits.toLocaleString();
-      document.getElementById('stat-skus').textContent = uniqueSkus.toLocaleString();
+      if (activeMode === 'returns') {
+        const today = localDateKey(new Date().toISOString());
+        const open = returnRecords.filter(r => !r.archivedAt);
+        document.getElementById('stat-label-scans').textContent = 'Returns Today';
+        document.getElementById('stat-label-units').textContent = 'Open Returns';
+        document.getElementById('stat-label-skus').textContent = 'To Inspect';
+        document.getElementById('stat-scans').textContent = returnRecords.filter(r => localDateKey(r.timestamp) === today).length.toLocaleString();
+        document.getElementById('stat-units').textContent = open.length.toLocaleString();
+        document.getElementById('stat-skus').textContent = open.filter(r => r.condition === 'INSPECT').length.toLocaleString();
+      } else {
+        document.getElementById('stat-label-scans').textContent = 'Total Scans';
+        document.getElementById('stat-label-units').textContent = 'Units Sorted';
+        document.getElementById('stat-label-skus').textContent = 'Active SKUs';
+        document.getElementById('stat-scans').textContent = totalScans.toLocaleString();
+        document.getElementById('stat-units').textContent = totalUnits.toLocaleString();
+        document.getElementById('stat-skus').textContent = uniqueSkus.toLocaleString();
+      }
 
       document.getElementById('badge-log-count').textContent = totalScans;
       document.getElementById('badge-master-count').textContent = skuMaster.length;
@@ -1276,7 +1520,8 @@
       const modal = document.getElementById('confirm-modal');
       document.getElementById('modal-title').textContent = 'Reset Inbound Sorting Session?';
       document.getElementById('modal-message').textContent =
-        'This will clear all scanned logs and reset bin unit counts to zero for the new shift. Your permanent SKU-to-Bin Master rules will be preserved.';
+        'This will clear all scanned logs and reset bin unit counts to zero for the new shift. Your permanent SKU-to-Bin Master rules and the returns register will be preserved.';
+      document.getElementById('modal-confirm').textContent = 'Confirm Reset';
       modal.classList.remove('hidden');
       modal.classList.add('flex');
 
@@ -1336,12 +1581,599 @@
     }
 
     // =========================================================================
+    // 8b. RETURNS SORTING MODE
+    // =========================================================================
+    // Each return record:
+    // { id, timestamp, primaryRef, refType, refs: [{ value, type }], condition,
+    //   bin, notes, archivedAt: ISO|null, archiveBatch: string|null }
+    const RETURN_CONDITIONS = {
+      RESTOCK: { label: 'Resellable / Restock', short: 'Restock', bin: 'RET-A01', icon: 'fa-rotate', color: 'emerald' },
+      INSPECT: { label: 'Needs Inspection', short: 'Inspect', bin: 'RET-Q01', icon: 'fa-magnifying-glass', color: 'amber' },
+      DAMAGED: { label: 'Damaged / Defective', short: 'Damaged', bin: 'RET-D01', icon: 'fa-heart-crack', color: 'rose' },
+      UNKNOWN: { label: 'Unidentified / No Match', short: 'Unidentified', bin: 'RET-X01', icon: 'fa-circle-question', color: 'slate' }
+    };
+    // Full class strings so Tailwind's CDN JIT picks them up.
+    const CONDITION_STYLES = {
+      emerald: {
+        badge: 'bg-emerald-50 text-emerald-700 border-emerald-300',
+        btnOn: 'bg-emerald-600 border-emerald-600 text-white shadow-sm',
+        text: 'text-emerald-600', textDark: 'text-emerald-800',
+        card: 'border-4 border-emerald-500 bg-gradient-to-br from-white via-white to-emerald-50 shadow-emerald-500/15',
+        status: 'bg-emerald-600 text-white'
+      },
+      amber: {
+        badge: 'bg-amber-50 text-amber-700 border-amber-300',
+        btnOn: 'bg-amber-500 border-amber-500 text-slate-950 shadow-sm',
+        text: 'text-amber-600', textDark: 'text-amber-800',
+        card: 'border-4 border-amber-500 bg-gradient-to-br from-white via-white to-amber-50 shadow-amber-500/15',
+        status: 'bg-amber-500 text-slate-950'
+      },
+      rose: {
+        badge: 'bg-rose-50 text-rose-700 border-rose-300',
+        btnOn: 'bg-rose-600 border-rose-600 text-white shadow-sm',
+        text: 'text-rose-600', textDark: 'text-rose-800',
+        card: 'border-4 border-rose-500 bg-gradient-to-br from-white via-white to-rose-50 shadow-rose-500/15',
+        status: 'bg-rose-600 text-white'
+      },
+      slate: {
+        badge: 'bg-slate-100 text-slate-700 border-slate-300',
+        btnOn: 'bg-slate-700 border-slate-700 text-white shadow-sm',
+        text: 'text-slate-700', textDark: 'text-slate-800',
+        card: 'border-4 border-slate-500 bg-gradient-to-br from-white via-white to-slate-100 shadow-slate-500/15',
+        status: 'bg-slate-700 text-white'
+      },
+      sky: {
+        card: 'border-4 border-sky-500 bg-gradient-to-br from-white via-white to-sky-50 shadow-sky-500/15',
+        status: 'bg-sky-600 text-white', text: 'text-sky-600', textDark: 'text-sky-800'
+      }
+    };
+
+    let returnRecords = [];
+    let activeCondition = 'INSPECT';
+    let activeMode = 'inbound';
+    let selectedReturnIds = new Set();
+
+    function loadReturnsState() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEYS.RETURNS);
+        const parsed = saved ? JSON.parse(saved) : null;
+        returnRecords = Array.isArray(parsed) ? parsed.filter(r => r && r.id && Array.isArray(r.refs)) : [];
+        const savedCond = localStorage.getItem(STORAGE_KEYS.RETURN_CONDITION);
+        if (savedCond && RETURN_CONDITIONS[savedCond]) activeCondition = savedCond;
+        const savedMode = localStorage.getItem(STORAGE_KEYS.MODE);
+        if (savedMode === 'returns' || savedMode === 'inbound') activeMode = savedMode;
+      } catch (err) {
+        console.error('Failed to load returns from localStorage:', err);
+        returnRecords = [];
+      }
+    }
+
+    function saveReturnsState() {
+      try {
+        localStorage.setItem(STORAGE_KEYS.RETURNS, JSON.stringify(returnRecords));
+        localStorage.setItem(STORAGE_KEYS.RETURN_CONDITION, activeCondition);
+        localStorage.setItem(STORAGE_KEYS.MODE, activeMode);
+      } catch (err) {
+        console.error('Failed to save returns:', err);
+        showToast('Could not save returns to this browser. Export now to keep a copy.', 'error');
+      }
+    }
+
+    // Normalize a scanned value: trim, uppercase, drop spaces, and strip the
+    // USPS "420 + ZIP" routing prefix that many label scanners include.
+    function normalizeRef(raw) {
+      let v = String(raw || '').trim().toUpperCase().replace(/\s+/g, '');
+      const usps = v.match(/^420\d{5}(?:\d{4})?(9\d{21,25})$/);
+      if (usps) v = usps[1];
+      return v;
+    }
+
+    // Best-effort guess at what kind of reference was scanned.
+    function detectRefType(ref) {
+      if (/^1Z[0-9A-Z]{16}$/.test(ref)) return 'UPS';
+      if (/^TBA\d{9,}$/.test(ref)) return 'Amazon';
+      if (/^(9[1-5]\d{18,24}|[A-Z]{2}\d{9}US)$/.test(ref)) return 'USPS';
+      if (/^(\d{12}|\d{15}|96\d{20}|\d{34})$/.test(ref)) return 'FedEx';
+      if (/^(\d{10}|JJD\d{9,}|JVGL\d{9,})$/.test(ref)) return 'DHL';
+      if (/^(RMA|RA|RET)[-_#]?[0-9A-Z]+/.test(ref)) return 'RMA';
+      if (/^(ORD|ORDER|SO|PO|#)[-_#]?[0-9A-Z]+/.test(ref)) return 'Order';
+      return 'Other Ref';
+    }
+
+    function parseLinkedRefs(raw) {
+      return String(raw || '')
+        .split(/[,;\n]+/)
+        .map(normalizeRef)
+        .filter(Boolean);
+    }
+
+    function findReturnByRef(ref) {
+      return returnRecords.find(r => r.refs.some(x => x.value === ref));
+    }
+
+    function handleReturnSubmit(event) {
+      if (event) event.preventDefault();
+      const refInput = document.getElementById('return-ref-input');
+      const linkedInput = document.getElementById('return-linked-input');
+      const notesInput = document.getElementById('return-notes-input');
+
+      const primary = normalizeRef(refInput.value);
+      const linked = parseLinkedRefs(linkedInput.value).filter(v => v !== primary);
+      const notes = notesInput.value.trim();
+
+      if (!primary) {
+        playScannerTone('error');
+        showToast('Scan a tracking number or enter a reference first.', 'error');
+        refInput.focus();
+        return;
+      }
+
+      const allRefs = [primary, ...linked];
+      const matches = Array.from(new Set(allRefs.map(findReturnByRef).filter(Boolean)));
+
+      if (matches.length > 1) {
+        playScannerTone('error');
+        showToast(`These references belong to ${matches.length} different returns. Check the labels and scan one at a time.`, 'error');
+        refInput.select();
+        return;
+      }
+
+      if (matches.length === 1) {
+        // Already received: show the record, and attach any new references to it.
+        const record = matches[0];
+        const added = allRefs.filter(v => !record.refs.some(x => x.value === v));
+        added.forEach(v => record.refs.push({ value: v, type: detectRefType(v) }));
+        if (notes) record.notes = record.notes ? `${record.notes} | ${notes}` : notes;
+        if (added.length || notes) saveReturnsState();
+
+        updateReturnHero(record, { duplicate: true, added });
+        playScannerTone(added.length ? 'overflow' : 'error');
+        showToast(added.length
+          ? `Already received. Linked ${added.length} new reference(s) to ${record.primaryRef}.`
+          : `Already received on ${formatDateTime(record.timestamp)} → ${record.bin}`, added.length ? 'success' : 'info');
+      } else {
+        const cond = RETURN_CONDITIONS[activeCondition];
+        const record = {
+          id: 'RET-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6).toUpperCase(),
+          timestamp: new Date().toISOString(),
+          primaryRef: primary,
+          refType: detectRefType(primary),
+          refs: allRefs.map(v => ({ value: v, type: detectRefType(v) })),
+          condition: activeCondition,
+          bin: cond.bin,
+          notes,
+          archivedAt: null,
+          archiveBatch: null
+        };
+        returnRecords.unshift(record);
+        saveReturnsState();
+        updateReturnHero(record, { duplicate: false });
+        playScannerTone(activeCondition === 'RESTOCK' ? 'success' : 'overflow');
+      }
+
+      refInput.value = '';
+      linkedInput.value = '';
+      notesInput.value = '';
+      updateReturnLiveHint('');
+      refInput.focus();
+      renderReturnsViews();
+    }
+
+    function clearReturnInputs() {
+      ['return-ref-input', 'return-linked-input', 'return-notes-input'].forEach(id => {
+        document.getElementById(id).value = '';
+      });
+      updateReturnLiveHint('');
+      document.getElementById('return-ref-input').focus();
+    }
+
+    function updateReturnLiveHint(val) {
+      const hintEl = document.getElementById('return-live-hint');
+      const ref = normalizeRef(val);
+      if (!ref) {
+        hintEl.innerHTML = '<i class="fa-solid fa-circle-info text-slate-500"></i><span>Scan a returned parcel. A known reference opens its existing record.</span>';
+        return;
+      }
+      const existing = findReturnByRef(ref);
+      if (existing) {
+        hintEl.innerHTML = `<i class="fa-solid fa-clock-rotate-left text-sky-600"></i>
+          <span class="text-sky-700 font-semibold">Already received ${escapeHtml(formatDateTime(existing.timestamp))}</span>
+          <span class="text-slate-500">→</span>
+          <span class="font-mono font-bold text-sky-600">${escapeHtml(existing.bin)}</span>`;
+        return;
+      }
+      const cond = RETURN_CONDITIONS[activeCondition];
+      const style = CONDITION_STYLES[cond.color];
+      hintEl.innerHTML = `<i class="fa-solid fa-tag ${style.text}"></i>
+        <span class="text-slate-700 font-semibold">${escapeHtml(detectRefType(ref))}</span>
+        <span class="text-slate-500">→ New return, ${escapeHtml(cond.short)}:</span>
+        <span class="font-mono font-bold ${style.text}">${escapeHtml(cond.bin)}</span>`;
+    }
+
+    function setReturnCondition(key) {
+      if (!RETURN_CONDITIONS[key]) return;
+      activeCondition = key;
+      saveReturnsState();
+      renderConditionButtons();
+      updateReturnLiveHint(document.getElementById('return-ref-input').value);
+      document.getElementById('return-ref-input').focus();
+    }
+
+    function renderConditionButtons() {
+      const container = document.getElementById('condition-buttons');
+      container.innerHTML = Object.entries(RETURN_CONDITIONS).map(([key, c]) => {
+        const on = key === activeCondition;
+        const style = CONDITION_STYLES[c.color];
+        const cls = on ? style.btnOn : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700';
+        return `
+          <button type="button" data-cond="${key}" onclick="setReturnCondition(this.dataset.cond)" aria-pressed="${on}"
+            class="px-3 py-2.5 rounded-xl border-2 ${cls} active:scale-95 text-left transition flex items-center gap-2">
+            <i class="fa-solid ${c.icon}"></i>
+            <span class="flex flex-col leading-tight min-w-0">
+              <span class="text-xs font-extrabold truncate">${escapeHtml(c.label)}</span>
+              <span class="text-[11px] font-mono ${on ? 'opacity-90' : 'text-slate-500'}">${escapeHtml(c.bin)}</span>
+            </span>
+          </button>`;
+      }).join('');
+    }
+
+    function updateReturnHero(record, opts = {}) {
+      const card = document.getElementById('return-card');
+      const statusBadge = document.getElementById('return-status-badge');
+      const typeBadge = document.getElementById('return-type-badge');
+      const binEl = document.getElementById('return-hero-bin');
+      const subEl = document.getElementById('return-hero-subtext');
+      const refEl = document.getElementById('return-hero-ref');
+      const linkedEl = document.getElementById('return-hero-linked');
+      const timeEl = document.getElementById('return-hero-time');
+      const base = 'lg:col-span-7 rounded-2xl p-6 sm:p-8 shadow-md flex flex-col justify-between relative overflow-hidden transition-all duration-200 ';
+
+      if (!record) {
+        card.className = base + 'border-2 border-slate-200 bg-white';
+        statusBadge.className = 'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-300';
+        statusBadge.innerHTML = '<i class="fa-solid fa-hourglass-half"></i> AWAITING SCAN';
+        typeBadge.innerHTML = '<i class="fa-solid fa-truck"></i> <span>CARRIER: —</span>';
+        binEl.className = 'font-mono font-black text-6xl sm:text-7xl md:text-8xl tracking-tight text-slate-400 select-all leading-none transition-all duration-200';
+        binEl.textContent = '---';
+        subEl.className = 'mt-3 text-sm sm:text-base font-semibold text-slate-500';
+        subEl.textContent = "Pick a condition, then scan the parcel's tracking number or any related reference";
+        refEl.className = 'text-lg sm:text-xl font-mono font-extrabold text-slate-700 truncate mt-0.5';
+        refEl.textContent = 'No parcel scanned yet';
+        linkedEl.textContent = 'Linked: —';
+        timeEl.className = 'font-mono font-black text-xl sm:text-2xl text-slate-500 mt-0.5';
+        timeEl.textContent = '--:--';
+        return;
+      }
+
+      const cond = RETURN_CONDITIONS[record.condition] || RETURN_CONDITIONS.UNKNOWN;
+      const style = opts.duplicate ? CONDITION_STYLES.sky : CONDITION_STYLES[cond.color];
+
+      card.className = base + style.card;
+      statusBadge.className = `inline-flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider shadow-sm ${style.status}`;
+      if (opts.duplicate) {
+        statusBadge.innerHTML = record.archivedAt
+          ? '<i class="fa-solid fa-box-archive"></i> ALREADY RECEIVED — ARCHIVED'
+          : '<i class="fa-solid fa-clock-rotate-left"></i> ALREADY RECEIVED';
+      } else {
+        statusBadge.innerHTML = `<i class="fa-solid fa-circle-check"></i> RETURN LOGGED — ${escapeHtml(cond.short.toUpperCase())}`;
+      }
+      typeBadge.className = 'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold bg-white text-slate-700 border border-slate-300';
+      typeBadge.innerHTML = `<i class="fa-solid fa-truck"></i> <span>${escapeHtml(record.refType)}</span>`;
+
+      binEl.className = `font-mono font-black text-6xl sm:text-7xl md:text-8xl tracking-tight ${style.text} select-all leading-none scale-105 transition-transform duration-200`;
+      binEl.textContent = record.bin;
+      subEl.className = `mt-3 text-sm sm:text-base font-bold ${style.textDark}`;
+      if (opts.duplicate) {
+        subEl.textContent = opts.added && opts.added.length
+          ? `Linked ${opts.added.length} new reference(s) to this return • ${cond.label}`
+          : `First received ${formatDateTime(record.timestamp)} • ${cond.label}`;
+      } else {
+        subEl.textContent = `${cond.label} • ${openReturnsCount()} open returns in register`;
+      }
+
+      refEl.className = 'text-lg sm:text-xl font-mono font-extrabold text-slate-900 truncate mt-0.5';
+      refEl.textContent = record.primaryRef;
+      const others = record.refs.filter(r => r.value !== record.primaryRef).map(r => r.value);
+      linkedEl.textContent = `Linked: ${others.length ? others.join(', ') : '—'}`;
+      timeEl.className = `font-mono font-black text-xl sm:text-2xl ${style.text} mt-0.5`;
+      timeEl.textContent = new Date(record.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      setTimeout(() => binEl.classList.remove('scale-105'), 220);
+    }
+
+    function openReturnsCount() {
+      return returnRecords.filter(r => !r.archivedAt).length;
+    }
+
+    function formatDateTime(iso) {
+      const d = new Date(iso);
+      return d.toLocaleString([], { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+    }
+
+    // YYYY-MM-DD in the browser's local time zone (matches <input type="date">)
+    function localDateKey(iso) {
+      const d = new Date(iso);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    function getFilteredReturns() {
+      const query = document.getElementById('returns-search').value.trim().toLowerCase();
+      const queryRef = normalizeRef(query).toLowerCase();
+      const status = document.getElementById('returns-status-filter').value;
+      const condFilter = document.getElementById('returns-condition-filter').value;
+      const from = document.getElementById('returns-date-from').value;
+      const to = document.getElementById('returns-date-to').value;
+
+      return returnRecords.filter(r => {
+        if (status === 'OPEN' && r.archivedAt) return false;
+        if (status === 'ARCHIVED' && !r.archivedAt) return false;
+        if (condFilter !== 'ALL' && r.condition !== condFilter) return false;
+        const day = localDateKey(r.timestamp);
+        if (from && day < from) return false;
+        if (to && day > to) return false;
+        if (!query) return true;
+        return r.refs.some(x => x.value.toLowerCase().includes(queryRef || query)) ||
+          r.bin.toLowerCase().includes(query) ||
+          (r.notes || '').toLowerCase().includes(query) ||
+          (r.archiveBatch || '').toLowerCase().includes(query) ||
+          r.refType.toLowerCase().includes(query);
+      });
+    }
+
+    function renderReturnsConditionFilter() {
+      const select = document.getElementById('returns-condition-filter');
+      if (select.options.length > 1) return;
+      select.innerHTML = '<option value="ALL">All conditions</option>' +
+        Object.entries(RETURN_CONDITIONS).map(([k, c]) => `<option value="${k}">${escapeHtml(c.label)}</option>`).join('');
+    }
+
+    function renderReturns() {
+      const tbody = document.getElementById('returns-table-body');
+      const filtered = getFilteredReturns();
+      const shownIds = new Set(filtered.map(r => r.id));
+      // Drop selections that are no longer visible so an export never includes hidden rows.
+      selectedReturnIds = new Set([...selectedReturnIds].filter(id => shownIds.has(id)));
+
+      document.getElementById('badge-returns-count').textContent = filtered.length;
+      const selectAll = document.getElementById('returns-select-all');
+      selectAll.checked = filtered.length > 0 && selectedReturnIds.size === filtered.length;
+      selectAll.indeterminate = selectedReturnIds.size > 0 && selectedReturnIds.size < filtered.length;
+      document.getElementById('returns-export-label').textContent = selectedReturnIds.size
+        ? `Export Selected (${selectedReturnIds.size}) CSV`
+        : `Export Shown (${filtered.length}) CSV`;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" class="py-12 px-4 text-center text-slate-500">
+              <i class="fa-solid fa-box-open text-3xl mb-2 block text-slate-300"></i>
+              <p class="font-semibold text-slate-500">No returns match your view</p>
+              <p class="text-xs mt-1">Scan a returned parcel above, or change the filters.</p>
+            </td>
+          </tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(r => {
+        const cond = RETURN_CONDITIONS[r.condition] || RETURN_CONDITIONS.UNKNOWN;
+        const style = CONDITION_STYLES[cond.color];
+        const others = r.refs.filter(x => x.value !== r.primaryRef);
+        const statusHtml = r.archivedAt
+          ? `<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200" title="Archived ${escapeHtml(formatDateTime(r.archivedAt))}">
+               <i class="fa-solid fa-box-archive"></i>${escapeHtml(r.archiveBatch || 'Archived')}</span>`
+          : '<span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[11px] font-bold bg-sky-50 text-sky-700 border border-sky-200"><i class="fa-solid fa-circle text-[6px]"></i>Open</span>';
+        return `
+          <tr class="hover:bg-slate-50 transition ${selectedReturnIds.has(r.id) ? 'bg-amber-50/70' : ''}">
+            <td class="py-3 px-4">
+              <input type="checkbox" data-id="${escapeHtml(r.id)}" ${selectedReturnIds.has(r.id) ? 'checked' : ''}
+                onchange="toggleReturnSelected(this.dataset.id, this.checked)" class="w-4 h-4 accent-amber-500" />
+            </td>
+            <td class="py-3 px-4 font-mono text-xs text-slate-500 whitespace-nowrap">${escapeHtml(formatDateTime(r.timestamp))}</td>
+            <td class="py-3 px-4">
+              <div class="font-mono font-bold text-slate-900 break-all">${escapeHtml(r.primaryRef)}</div>
+              <div class="text-[11px] text-slate-500">${escapeHtml(r.refType)}${r.notes ? ' • ' + escapeHtml(r.notes) : ''}</div>
+            </td>
+            <td class="py-3 px-4 font-mono text-xs text-slate-600">
+              ${others.length ? others.map(x => `<div class="break-all">${escapeHtml(x.value)} <span class="font-sans text-slate-400">${escapeHtml(x.type)}</span></div>`).join('') : '<span class="text-slate-400">—</span>'}
+            </td>
+            <td class="py-3 px-4 whitespace-nowrap">
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border ${style.badge}">
+                <i class="fa-solid ${cond.icon}"></i>${escapeHtml(cond.short)}
+              </span>
+            </td>
+            <td class="py-3 px-4 whitespace-nowrap">
+              <span class="inline-flex items-center px-2.5 py-1 rounded-lg font-mono text-xs font-extrabold border ${style.badge}">${escapeHtml(r.bin)}</span>
+            </td>
+            <td class="py-3 px-4 whitespace-nowrap">${statusHtml}</td>
+            <td class="py-3 px-4 text-center whitespace-nowrap">
+              <button type="button" data-id="${escapeHtml(r.id)}" onclick="promptDeleteReturn(this.dataset.id)" title="Remove record"
+                class="p-2 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-500/10 transition">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </td>
+          </tr>`;
+      }).join('');
+    }
+
+    function toggleReturnSelected(id, checked) {
+      if (checked) selectedReturnIds.add(id); else selectedReturnIds.delete(id);
+      renderReturns();
+    }
+
+    function toggleSelectAllReturns(checked) {
+      selectedReturnIds = checked ? new Set(getFilteredReturns().map(r => r.id)) : new Set();
+      renderReturns();
+    }
+
+    function renderReturnsViews() {
+      renderConditionButtons();
+      renderReturnsConditionFilter();
+      renderReturns();
+      document.getElementById('badge-returns-open').textContent = openReturnsCount();
+      renderHeaderStats();
+    }
+
+    function promptDeleteReturn(id) {
+      const record = returnRecords.find(r => r.id === id);
+      if (!record) return;
+      openConfirmModal({
+        title: 'Remove this return record?',
+        message: `${record.primaryRef} (${record.bin}) will be deleted from the returns register. Export first if you need to keep it.`,
+        confirmLabel: 'Remove Record',
+        onConfirm: () => {
+          returnRecords = returnRecords.filter(r => r.id !== id);
+          selectedReturnIds.delete(id);
+          saveReturnsState();
+          updateReturnHero(null);
+          renderReturnsViews();
+          showToast(`Removed return ${record.primaryRef}`, 'info');
+        }
+      });
+    }
+
+    function exportReturnsCSV() {
+      const filtered = getFilteredReturns();
+      const rows = selectedReturnIds.size ? filtered.filter(r => selectedReturnIds.has(r.id)) : filtered;
+      if (rows.length === 0) {
+        showToast('No returns in the current view to export.', 'error');
+        return;
+      }
+
+      const archive = document.getElementById('archive-after-export').checked;
+      const now = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+      const batchId = `ARC-${stamp}`;
+
+      if (archive) {
+        rows.forEach(r => {
+          if (!r.archivedAt) {
+            r.archivedAt = now.toISOString();
+            r.archiveBatch = batchId;
+          }
+        });
+      }
+
+      const csvCell = (value) => {
+        let text = String(value ?? '');
+        if (/^[=+\-@\t\r]/.test(text)) text = "'" + text; // stop Excel/Sheets running it as a formula
+        return `"${text.replace(/"/g, '""')}"`;
+      };
+      const headers = ['Received At', 'Primary Reference', 'Reference Type', 'Linked References', 'Condition', 'Return Bin', 'Notes', 'Status', 'Archive Batch', 'Archived At', 'Record ID'];
+      const csvTime = iso => {
+        const d = new Date(iso);
+        return `${localDateKey(iso)} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+      };
+      const lines = rows.map(r => {
+        const cond = RETURN_CONDITIONS[r.condition] || RETURN_CONDITIONS.UNKNOWN;
+        return [
+          csvTime(r.timestamp),
+          r.primaryRef,
+          r.refType,
+          r.refs.filter(x => x.value !== r.primaryRef).map(x => `${x.value} (${x.type})`).join('; '),
+          cond.label,
+          r.bin,
+          r.notes || '',
+          r.archivedAt ? 'Archived' : 'Open',
+          r.archiveBatch || '',
+          r.archivedAt ? csvTime(r.archivedAt) : '',
+          r.id
+        ].map(csvCell).join(',');
+      });
+
+      const csvContent = [headers.map(csvCell).join(','), ...lines].join('\r\n');
+      const blob = new Blob(['﻿' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `returns-${archive ? batchId.toLowerCase() : 'export-' + stamp}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      if (archive) {
+        selectedReturnIds = new Set();
+        saveReturnsState();
+        renderReturnsViews();
+      }
+      showToast(archive
+        ? `Exported ${rows.length} return(s) and archived as ${batchId}`
+        : `Exported ${rows.length} return(s)`, 'success');
+    }
+
+    // =========================================================================
+    // 8c. MODE SWITCHING (INBOUND ↔ RETURNS)
+    // =========================================================================
+    function switchMode(mode) {
+      activeMode = mode === 'returns' ? 'returns' : 'inbound';
+      saveReturnsState();
+      const isReturns = activeMode === 'returns';
+      const onCls = 'px-4 py-2 rounded-lg text-sm font-extrabold flex items-center gap-2 transition bg-amber-500 text-slate-950 shadow-sm';
+      const offCls = 'px-4 py-2 rounded-lg text-sm font-extrabold flex items-center gap-2 transition text-slate-500 hover:text-slate-900 hover:bg-slate-50';
+      document.getElementById('mode-btn-inbound').className = isReturns ? offCls : onCls;
+      document.getElementById('mode-btn-returns').className = isReturns ? onCls : offCls;
+      document.getElementById('mode-btn-inbound').setAttribute('aria-selected', String(!isReturns));
+      document.getElementById('mode-btn-returns').setAttribute('aria-selected', String(isReturns));
+
+      const inboundEl = document.getElementById('mode-inbound');
+      const returnsEl = document.getElementById('mode-returns');
+      inboundEl.classList.toggle('hidden', isReturns);
+      inboundEl.classList.toggle('flex', !isReturns);
+      returnsEl.classList.toggle('hidden', !isReturns);
+      returnsEl.classList.toggle('flex', isReturns);
+
+      document.getElementById('header-subtitle').textContent = isReturns
+        ? 'Customer Returns Receiving & Disposition Sorting'
+        : 'High-Speed Receiving & Put-Away Routing System';
+      document.getElementById('header-export-label').textContent = isReturns
+        ? 'Export Returns (CSV)'
+        : 'Export Consolidated Report (CSV)';
+      document.getElementById('mode-hint').textContent = isReturns
+        ? 'Returns are kept separately and are not cleared by Reset Session.'
+        : '';
+
+      renderHeaderStats();
+      document.getElementById(isReturns ? 'return-ref-input' : 'sku-input').focus();
+    }
+
+    function exportForActiveMode() {
+      if (activeMode === 'returns') exportReturnsCSV();
+      else exportConsolidatedCSV();
+    }
+
+    // Shared confirmation modal
+    function openConfirmModal({ title, message, confirmLabel, onConfirm }) {
+      const modal = document.getElementById('confirm-modal');
+      document.getElementById('modal-title').textContent = title;
+      document.getElementById('modal-message').textContent = message;
+      document.getElementById('modal-confirm').textContent = confirmLabel;
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      const close = () => {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      };
+      document.getElementById('modal-cancel').onclick = close;
+      document.getElementById('modal-confirm').onclick = () => {
+        close();
+        onConfirm();
+      };
+    }
+
+    // =========================================================================
     // 9. BOOTSTRAP APPLICATION
     // =========================================================================
     window.addEventListener('DOMContentLoaded', () => {
       loadState();
+      loadReturnsState();
       updateAudioIcons();
       refreshAllViews();
+      renderReturnsViews();
+      if (returnRecords.length > 0) updateReturnHero(returnRecords[0]);
+
+      document.getElementById('return-ref-input')
+        .addEventListener('input', (e) => updateReturnLiveHint(e.target.value));
 
       // Restore last active put-away card if logs exist from current session
       if (scanLogs.length > 0) {
@@ -1350,7 +2182,7 @@
 
       const skuInput = document.getElementById('sku-input');
       skuInput.addEventListener('input', (e) => updateLiveSkuHint(e.target.value));
-      skuInput.focus();
+      switchMode(activeMode);
     });
   </script>
 </body>
